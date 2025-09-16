@@ -1,0 +1,48 @@
+INSERT INTO [dbo].[apps] (
+    [application_id],
+    [nama_aplikasi],
+    [deskripsi_singkat],
+    [business_owner],
+    [system_owner],
+    [criticality],
+    [touch_point],
+    [fo_mo_bo],
+    [pengembang],
+    [status],
+    [customer_facing],
+    [status_ARIS],
+    [remarks],
+    [param_rep_cust]
+)
+VALUES
+( 'EKSTERNAL_',
+  'Eksternal',
+  'Special code application: Eksternal',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
+),
+-- ...
+( 'AMOMWI0666',
+  '...',
+  '...',
+  '',
+  'RDL',
+  '2-High',
+  '',
+  'MO',
+  '',
+  '',
+  'No',
+  '',
+  '',
+  '0'
+);
