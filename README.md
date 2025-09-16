@@ -1,78 +1,85 @@
-# Proyek Manajemen Aset Digital
+# Portal Manajemen Aplikasi
 
-Proyek ini adalah sistem web komprehensif untuk mengelola aset digital utama perusahaan, yang mencakup data aplikasi, penanggung jawab (PIC), dan tautan terkait. Proyek ini terdiri dari dua komponen utama: **front-end** yang dibangun dengan **React** dan **back-end** yang dibangun dengan **Node.js** menggunakan framework **Express**.
+Portal ini adalah aplikasi web yang dibangun untuk mengelola data aplikasi dan PIC (Person in Charge) terkait. Aplikasi ini terdiri dari backend (API) yang dibangun dengan Node.js dan frontend yang dibangun dengan React.
 
 ## Fitur Utama
 
-- **Manajemen Aplikasi**: Sistem CRUD (Create, Read, Update, Delete) lengkap untuk mengelola data aplikasi.
-- **Manajemen PIC**: Kelola data individu atau tim yang bertanggung jawab atas setiap aset.
-- **Manajemen Tautan**: Kelola tautan penting yang terkait dengan aplikasi, seperti dokumentasi, repositori, atau dasbor.
-- **Arsitektur Modular**: Proyek terstruktur dengan jelas menjadi direktori `frontend` dan `backend` untuk memfasilitasi pengembangan dan pemeliharaan yang independen.
+* **Daftar Aplikasi:** Melihat, menambah, memperbarui, dan menghapus data aplikasi.
+* **Pencarian Berdasarkan ID Aplikasi:** Menemukan semua PIC yang bertanggung jawab atas aplikasi tertentu.
+* **Pencarian Berdasarkan NPP PIC:** Menemukan semua aplikasi yang dikelola oleh seorang PIC.
 
------
+## Teknologi yang Digunakan
 
-## Prasyarat
+### Frontend
 
-Sebelum memulai, pastikan Anda telah menginstal:
+* **React:** Library JavaScript untuk membangun antarmuka pengguna.
+* **Vite:** Tooling frontend untuk pengembangan yang cepat.
+* **React-Router-Dom:** Untuk navigasi antar halaman.
+* **React-Bootstrap:** Komponen UI yang dibuat dengan Bootstrap untuk tampilan yang rapi dan responsif.
+* **Axios:** Klien HTTP untuk berinteraksi dengan API backend.
 
-- **Node.js** (versi 14 atau lebih baru)
-- **npm** atau **Yarn**
+### Backend
 
------
+* **Node.js:** Lingkungan runtime JavaScript.
+* **Express.js:** Framework web untuk membangun API.
+* **msnodesqlv8:** Driver Node.js untuk terhubung ke SQL Server.
+* **CORS:** Middleware untuk mengizinkan permintaan lintas domain.
+
+## Cara Menjalankan Proyek
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi secara lokal.
+
+### Persyaratan
+
+* Node.js (versi 16 atau lebih baru)
+* npm (atau yarn)
+* Microsoft SQL Server dengan database `mir_db` dan tabel yang relevan (`apps`, `pics`, `app_pic_map`).
+
+### 1\. Klon Repositori
+
+```bash
+git clone <URL_REPOSITORI_ANDA>
+cd portal-aplikasi
+```
+
+### 2\. Konfigurasi Backend
+
+Masuk ke folder `be` dan instal dependensi, lalu jalankan server:
+
+```bash
+cd be
+npm install
+node index.js
+```
+
+Pastikan Anda telah mengkonfigurasi `connectionString` di file `index.js` dengan benar agar terhubung ke database SQL Server Anda.
+
+### 3\. Menjalankan Frontend
+
+Buka terminal baru, masuk ke folder `fe`, instal dependensi, dan jalankan aplikasi React:
+
+```bash
+cd ../fe
+npm install
+npm run dev
+```
+
+Aplikasi frontend akan terbuka di browser Anda (biasanya di `http://localhost:5173`).
 
 ## Struktur Proyek
 
+Berikut adalah gambaran singkat struktur folder proyek:
+
 ```tree
-/nama-proyek-anda
-├─── /backend/
-│    ├─── package.json
-│    ├─── server.js
-│    └─── ... (file backend lainnya)
-├─── /frontend/
-│    ├─── public/
-│    ├─── src/
-│    │    ├─── App.js
-│    │    ├─── App.css
-│    │    └─── index.js
-│    ├─── package.json
-│    └─── ... (file frontend lainnya)
-├─── .gitignore
-└─── README.md
+.
+├── be/                 # Folder untuk backend Node.js
+│   ├── index.js        # Server Express.js dan endpoint API
+│   └── package.json    # Dependensi backend
+├── fe/                 # Folder untuk frontend React
+│   ├── src/
+│   │   ├── components/ # Komponen UI yang dapat digunakan kembali
+│   │   ├── pages/      # Halaman-halaman utama aplikasi
+│   │   └── services/   # Klien API untuk berinteraksi dengan backend
+│   └── package.json    # Dependensi frontend
+└── README.md           # File dokumentasi ini
 ```
-
------
-
-### Memulai Proyek
-
-Ikuti langkah-langkah di bawah ini untuk menginstal dan menjalankan proyek Anda.
-
-#### 1\. Memulai Back-end
-
-Masuk ke direktori `backend`, instal dependensi, dan jalankan server.
-
-```sh
-cd backend
-npm install
-npm start
-```
-
-Server akan berjalan di `http://localhost:5000`. Pastikan database Anda telah dikonfigurasi dengan benar agar server dapat terhubung.
-
-#### 2\. Memulai Front-end
-
-Buka jendela terminal baru, masuk ke direktori `frontend`, instal dependensi, dan jalankan aplikasi React.
-
-```sh
-cd frontend
-npm install
-npm start
-```
-
-Aplikasi akan terbuka di `http://localhost:3000`. Aplikasi front-end akan secara otomatis terhubung ke back-end.
-
------
-
-### Penjelasan Teknis
-
-- **Back-end**: Menggunakan **Express** untuk membuat API RESTful yang melayani data untuk aplikasi, PIC, dan tautan. Konfigurasi **CORS** telah ditambahkan untuk memastikan komunikasi yang lancar dengan front-end.
-- **Front-end**: Dibangun dengan **React** dan diorganisir menjadi komponen-komponen yang terpisah untuk setiap fitur (aplikasi, PIC, tautan). Aplikasi ini mengambil data dari API, menampilkannya dalam tabel, dan menyediakan modal untuk operasi penambahan, pengeditan, dan penghapusan. Desain visualnya dibuat dengan **CSS kustom** untuk tampilan yang bersih dan modern.
