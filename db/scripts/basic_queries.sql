@@ -29,3 +29,7 @@ FROM [dbo].[pics] p;
 SELECT p.*
 FROM [dbo].[pics] p
 WHERE p.npp = '70556';
+
+-- menampilkan semua link
+SELECT l.*
+FROM [dbo].[links] l;

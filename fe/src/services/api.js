@@ -41,3 +41,12 @@ export const getAppPicRelations = () => api.get('/app-pic-map');
 
 // Fungsi untuk menghapus relasi App-PIC
 export const deleteAppPicRelation = (application_id, npp) => api.delete('/app-pic-map', { data: { application_id, npp } });
+
+// Fungsi untuk mengunduh data aplikasi sebagai CSV
+export const downloadAppsCsv = () => api.get('/apps/download/csv', { responseType: 'blob' });
+
+// Fungsi untuk mengunduh data PIC sebagai CSV
+export const downloadPicsCsv = () => api.get('/pics/download/csv', { responseType: 'blob' });
+
+// Fungsi untuk mengunduh data relasi sebagai CSV
+export const downloadAppPicRelationsCsv = () => api.get('/app-pic-map/download/csv', { responseType: 'blob' });

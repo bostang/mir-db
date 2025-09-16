@@ -6,6 +6,7 @@ import AppSearch from './components/AppSearch';
 import PicSearch from './components/PicSearch';
 import PicsPage from './pages/PicsPage';
 import AppPicPage from './pages/AppPicPage';
+import DownloadPage from './pages/DownloadPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/search/pics" element={<AppSearch />} />
           <Route path="/search/apps" element={<PicSearch />} />
           <Route path="/map-pic" element={<AppPicPage />} />
+          <Route path="/download" element={<DownloadPage />} />
         </Routes>
       </div>
     </>

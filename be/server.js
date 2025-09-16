@@ -237,6 +237,107 @@ app.post('/api/app-pic-map', (req, res, next) => {
     });
 });
 
+// Endpoint untuk mengunduh data Aplikasi dalam format CSV
+appsRouter.get('/download/csv', (req, res, next) => {
+    const query = "SELECT * FROM apps";
+    sql.query(connectionString, query, (err, rows) => {
+        if (err) return next(err);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Tidak ada data aplikasi untuk diunduh.');
+        }
+
+        // Fungsi untuk mengonversi array of objects menjadi string CSV
+        const convertToCsv = (data) => {
+            const header = Object.keys(data[0]).join(',') + '\n';
+            const body = data.map(row => Object.values(row).map(value => {
+                // Tangani nilai null dan karakter khusus
+                if (value === null) return '';
+                // Enclose string values in double quotes if they contain commas
+                const stringValue = String(value);
+                return stringValue.includes(',') ? `"${stringValue}"` : stringValue;
+            }).join(',')).join('\n');
+            return header + body;
+        };
+        
+        const csvData = convertToCsv(rows);
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=apps.csv');
+        res.status(200).send(csvData);
+    });
+});
+
+// Endpoint untuk mengunduh data PIC dalam format CSV
+picsRouter.get('/download/csv', (req, res, next) => {
+    const query = "SELECT * FROM pics";
+    sql.query(connectionString, query, (err, rows) => {
+        if (err) return next(err);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Tidak ada data PIC untuk diunduh.');
+        }
+
+        // Fungsi untuk mengonversi array of objects menjadi string CSV
+        const convertToCsv = (data) => {
+            const header = Object.keys(data[0]).join(',') + '\n';
+            const body = data.map(row => Object.values(row).map(value => {
+                // Tangani nilai null dan karakter khusus
+                if (value === null) return '';
+                // Enclose string values in double quotes if they contain commas
+                const stringValue = String(value);
+                return stringValue.includes(',') ? `"${stringValue}"` : stringValue;
+            }).join(',')).join('\n');
+            return header + body;
+        };
+        
+        const csvData = convertToCsv(rows);
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=pics.csv');
+        res.status(200).send(csvData);
+    });
+});
+
+// Endpoint baru untuk mengunduh data relasi dalam format CSV
+app.get('/api/app-pic-map/download/csv', (req, res, next) => {
+    const query = `
+        SELECT
+            apm.application_id,
+            a.nama_aplikasi,
+            apm.npp,
+            p.nama AS nama_pic,
+            apm.note
+        FROM app_pic_map apm
+        JOIN apps a ON apm.application_id = a.application_id
+        JOIN pics p ON apm.npp = p.npp
+    `;
+    sql.query(connectionString, query, (err, rows) => {
+        if (err) return next(err);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Tidak ada data relasi untuk diunduh.');
+        }
+
+        // Fungsi untuk mengonversi array of objects menjadi string CSV
+        const convertToCsv = (data) => {
+            const header = Object.keys(data[0]).join(',') + '\n';
+            const body = data.map(row => Object.values(row).map(value => {
+                if (value === null) return '';
+                const stringValue = String(value);
+                return stringValue.includes(',') ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
+            }).join(',')).join('\n');
+            return header + body;
+        };
+
+        const csvData = convertToCsv(rows);
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=app_pic_relations.csv');
+        res.status(200).send(csvData);
+    });
+});
+
 app.use('/api/pics', picsRouter);
 
 // Mulai server
