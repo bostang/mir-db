@@ -20,3 +20,7 @@ SELECT a.*
 FROM [dbo].[apps] a
 JOIN [dbo].[app_pic_map] apm ON a.application_id = apm.application_id
 WHERE apm.npp = '57873';
+
+-- menampilkan 3 pic
+SELECT TOP 3 p.*
+FROM [dbo].[pics] p;

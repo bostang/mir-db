@@ -100,6 +100,16 @@ app.use('/api/apps', appsRouter);
 // Mengelompokkan rute untuk /api/pics
 const picsRouter = express.Router();
 
+// Endpoint untuk mendapatkan semua PIC
+picsRouter.get('/', (req, res, next) => {
+    const query = "SELECT * FROM pics";
+    sql.query(connectionString, query, (err, rows) => {
+        if (err) return next(err);
+        res.json(rows);
+    });
+});
+
+
 picsRouter.get('/:npp', (req, res, next) => {
     const npp = req.params.npp;
     const query = "SELECT * FROM pics WHERE npp = ?";

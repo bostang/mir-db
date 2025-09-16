@@ -51,25 +51,32 @@ function AppSearch() {
       {message && <p className="alert alert-info">{message}</p>}
 
       {pics.length > 0 && (
-        <Table striped bordered hover>
+        <Table striped bordered hover responsive>
           <thead>
             <tr>
               <th>NPP</th>
-              <th>Nama PIC</th>
-              <th>Email</th>
+              <th>Nama</th>
+              <th>Role</th>
               <th>Jabatan</th>
-              <th>Unit Kerja</th>
+              <th>No. Telp</th>
+              <th>Email</th>
+              <th>Entity</th>
+              <th>Grup</th>
+              <th>Rubrik</th>
             </tr>
           </thead>
           <tbody>
             {pics.map((pic, index) => (
               <tr key={index}>
                 <td>{pic.npp}</td>
-                {/* Perbaikan: Ganti pic["Nama PIC"] menjadi pic.nama */}
                 <td>{pic.nama}</td>
-                <td>{pic.email}</td>
+                <td>{pic.role}</td>
                 <td>{pic.jabatan}</td>
-                <td>{pic.unit_kerja}</td>
+                <td>{pic.no_telp}</td>
+                <td>{pic.email}</td>
+                <td>{pic.entity}</td>
+                <td>{pic.grup}</td>
+                <td>{pic.rubrik}</td>
               </tr>
             ))}
           </tbody>

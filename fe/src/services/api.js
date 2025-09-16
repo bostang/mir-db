@@ -9,7 +9,12 @@ const api = axios.create({
     },
 });
 
+// Fungsi untuk mendapatkan semua PIC
+export const getPics = () => api.get('/pics');
+
+// Fungsi untuk mendapatkan semua aplikasi
 export const getApps = () => api.get('/apps');
+
 export const getAppById = (id) => api.get(`/apps/${id}`);
 export const createApp = (appData) => api.post('/apps', appData);
 export const updateApp = (id, appData) => api.put(`/apps/${id}`, appData);
