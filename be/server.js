@@ -187,6 +187,20 @@ picsRouter.get('/:npp/apps', (req, res, next) => {
     });
 });
 
+// Endpoint untuk menambahkan relasi pic ke aplikasi
+app.post('/api/app-pic-map', (req, res, next) => {
+    const { application_id, npp, note } = req.body;
+    if (!application_id || !npp) {
+        return res.status(400).send('application_id dan npp harus diisi.');
+    }
+
+    const query = "INSERT INTO app_pic_map (application_id, npp, note) VALUES (?, ?, ?)";
+    sql.query(connectionString, query, [application_id, npp, note], (err, result) => {
+        if (err) return next(err);
+        res.status(201).send('Relasi berhasil ditambahkan.');
+    });
+});
+
 app.use('/api/pics', picsRouter);
 
 // Mulai server
