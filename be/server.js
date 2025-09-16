@@ -187,6 +187,42 @@ picsRouter.get('/:npp/apps', (req, res, next) => {
     });
 });
 
+// Endpoint untuk mendapatkan semua relasi app-pic
+app.get('/api/app-pic-map', (req, res, next) => {
+    const query = `
+        SELECT
+            apm.application_id,
+            a.nama_aplikasi,
+            apm.npp,
+            p.nama AS nama_pic,
+            apm.note
+        FROM app_pic_map apm
+        JOIN apps a ON apm.application_id = a.application_id
+        JOIN pics p ON apm.npp = p.npp
+    `;
+    sql.query(connectionString, query, (err, rows) => {
+        if (err) return next(err);
+        res.json(rows);
+    });
+});
+
+// Endpoint untuk menghapus relasi app-pic
+app.delete('/api/app-pic-map', (req, res, next) => {
+    const { application_id, npp } = req.body;
+    if (!application_id || !npp) {
+        return res.status(400).send('application_id dan npp harus diisi.');
+    }
+
+    const query = "DELETE FROM app_pic_map WHERE application_id = ? AND npp = ?";
+    sql.query(connectionString, query, [application_id, npp], (err, result) => {
+        if (err) return next(err);
+        if (result.rowsAffected === 0) {
+            return res.status(404).send('Relasi tidak ditemukan.');
+        }
+        res.send('Relasi berhasil dihapus.');
+    });
+});
+
 // Endpoint untuk menambahkan relasi pic ke aplikasi
 app.post('/api/app-pic-map', (req, res, next) => {
     const { application_id, npp, note } = req.body;

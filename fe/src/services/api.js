@@ -35,3 +35,9 @@ export const deletePic = (npp) => api.delete(`/pics/${npp}`);
 
 // Fungsi untuk menambahkan relasi App-PIC
 export const addAppPicRelation = (relationData) => api.post('/app-pic-map', relationData);
+
+// Fungsi untuk mendapatkan semua relasi App-PIC
+export const getAppPicRelations = () => api.get('/app-pic-map');
+
+// Fungsi untuk menghapus relasi App-PIC
+export const deleteAppPicRelation = (application_id, npp) => api.delete('/app-pic-map', { data: { application_id, npp } });
