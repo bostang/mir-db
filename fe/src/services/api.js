@@ -23,3 +23,12 @@ export const deleteApp = (id) => api.delete(`/apps/${id}`);
 export const getPicsByAppId = (appId) => api.get(`/apps/${appId}/pics`);
 export const getAppsByPicNpp = (npp) => api.get(`/pics/${npp}/apps`);
 export const getPicByNpp = (npp) => api.get(`/pics/${npp}`);
+
+// Fungsi untuk mengupdate PIC
+export const updatePic = (npp, picData) => api.put(`/pics/${npp}`, picData);
+
+// Fungsi untuk membuat PIC baru
+export const createPic = (picData) => api.post('/pics', picData);
+
+// Fungsi untuk menghapus PIC
+export const deletePic = (npp) => api.delete(`/pics/${npp}`);

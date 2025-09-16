@@ -24,3 +24,8 @@ WHERE apm.npp = '57873';
 -- menampilkan 3 pic
 SELECT TOP 3 p.*
 FROM [dbo].[pics] p;
+
+-- menamplilkan pic dengan npp 70556
+SELECT p.*
+FROM [dbo].[pics] p
+WHERE p.npp = '70556';

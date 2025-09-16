@@ -1,4 +1,3 @@
-// fe/src/pages/AppsPage.jsx
 import { useState, useEffect } from 'react';
 import { getApps, createApp, deleteApp, updateApp } from '../services/api';
 import { Container, Table, Form, Button, Row, Col, Card } from 'react-bootstrap';
@@ -6,8 +5,10 @@ import { Container, Table, Form, Button, Row, Col, Card } from 'react-bootstrap'
 function AppsPage() {
     const [apps, setApps] = useState([]);
     const [formData, setFormData] = useState({ application_id: '', nama_aplikasi: '', deskripsi_singkat: '', business_owner: '' });
-    const [searchTerm, setSearchTerm] = useState(''); // State baru untuk search bar
+    const [searchTerm, setSearchTerm] = useState('');
+    const [editingId, setEditingId] = useState(null); // State baru untuk menyimpan ID yang sedang diedit
 
+    // ... (kode fetchApps, handleChange, handleSubmit yang sudah ada)
     const fetchApps = async () => {
         try {
             const res = await getApps();
@@ -25,17 +26,35 @@ function AppsPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createApp(formData);
+            if (editingId) {
+                // Jika sedang dalam mode edit, panggil updateApp
+                await updateApp(editingId, formData);
+            } else {
+                // Jika tidak, panggil createApp
+                await createApp(formData);
+            }
             setFormData({ application_id: '', nama_aplikasi: '', deskripsi_singkat: '', business_owner: '' });
+            setEditingId(null); // Keluar dari mode edit
             fetchApps();
         } catch (error) {
-            console.error('Failed to create app:', error);
+            console.error('Failed to save app:', error);
         }
     };
 
+    const handleEdit = (app) => {
+        setEditingId(app.application_id);
+        setFormData({
+            application_id: app.application_id,
+            nama_aplikasi: app.nama_aplikasi,
+            deskripsi_singkat: app.deskripsi_singkat,
+            business_owner: app.business_owner,
+        });
+    };
+    
+    // ... (kode handleDelete dan filteredApps yang sudah ada)
     const handleDelete = async (id) => {
         try {
             await deleteApp(id);
@@ -45,19 +64,17 @@ function AppsPage() {
         }
     };
 
-    // Filter aplikasi berdasarkan searchTerm
     const filteredApps = apps.filter(app =>
         app.nama_aplikasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.application_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.deskripsi_singkat.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.business_owner.toLowerCase().includes(searchTerm.toLowerCase())
+        (app.deskripsi_singkat && app.deskripsi_singkat.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (app.business_owner && app.business_owner.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
 
     return (
         <Container className="mt-4">
             <h1 className="mb-4">Daftar Aplikasi</h1>
-
-            {/* Tambahkan Search Bar di sini */}
             <Form className="mb-4">
                 <Form.Group>
                     <Form.Control
@@ -68,15 +85,14 @@ function AppsPage() {
                     />
                 </Form.Group>
             </Form>
-
             <Card className="mb-4">
-                <Card.Header>Tambah Aplikasi Baru</Card.Header>
+                <Card.Header>{editingId ? 'Edit Aplikasi' : 'Tambah Aplikasi Baru'}</Card.Header>
                 <Card.Body>
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleFormSubmit}>
                         <Row>
                             <Col>
                                 <Form.Group className="mb-3">
-                                    <Form.Control type="text" name="application_id" placeholder="Application ID" value={formData.application_id} onChange={handleChange} required />
+                                    <Form.Control type="text" name="application_id" placeholder="Application ID" value={formData.application_id} onChange={handleChange} required disabled={!!editingId} />
                                 </Form.Group>
                             </Col>
                             <Col>
@@ -95,7 +111,7 @@ function AppsPage() {
                                 </Form.Group>
                             </Col>
                             <Col xs="auto">
-                                <Button variant="primary" type="submit">Tambah</Button>
+                                <Button variant="primary" type="submit">{editingId ? 'Simpan Perubahan' : 'Tambah'}</Button>
                             </Col>
                         </Row>
                     </Form>
@@ -113,7 +129,6 @@ function AppsPage() {
                     </tr>
                 </thead>
                 <tbody>
-                    {/* Gunakan data yang sudah difilter */}
                     {filteredApps.map((app) => (
                         <tr key={app.application_id}>
                             <td>{app.application_id}</td>
@@ -121,7 +136,8 @@ function AppsPage() {
                             <td>{app.deskripsi_singkat}</td>
                             <td>{app.business_owner}</td>
                             <td>
-                                <Button variant="danger" onClick={() => handleDelete(app.application_id)}>Hapus</Button>
+                                <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(app)}>Edit</Button>
+                                <Button variant="danger" size="sm" onClick={() => handleDelete(app.application_id)}>Hapus</Button>
                             </td>
                         </tr>
                     ))}

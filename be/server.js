@@ -55,6 +55,7 @@ appsRouter.post('/', (req, res, next) => {
     });
 });
 
+// endpoint PUT untuk mengupdate data aplikasi
 appsRouter.put('/:id', (req, res, next) => {
     const applicationId = req.params.id;
     const { nama_aplikasi, deskripsi_singkat, business_owner } = req.body;
@@ -65,6 +66,59 @@ appsRouter.put('/:id', (req, res, next) => {
             return res.status(404).send('Aplikasi tidak ditemukan.');
         }
         res.send('Aplikasi berhasil diupdate.');
+    });
+});
+
+// Mengelompokkan rute untuk /api/pics
+const picsRouter = express.Router();
+
+
+// Endpoint untuk menambahkan PIC baru
+picsRouter.post('/', (req, res, next) => {
+    const { npp, nama, role, jabatan, no_telp, email, entity, grup, rubrik } = req.body;
+    if (!npp || !nama) {
+        return res.status(400).send('NPP dan nama harus diisi.');
+    }
+    const query = `
+        INSERT INTO pics (npp, nama, role, jabatan, no_telp, email, entity, grup, rubrik)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [npp, nama, role, jabatan, no_telp, email, entity, grup, rubrik];
+    sql.query(connectionString, query, params, (err, result) => {
+        if (err) return next(err);
+        res.status(201).send('PIC berhasil ditambahkan.');
+    });
+});
+
+// endpoint PUT untuk mengupdate data PIC
+picsRouter.put('/:npp', (req, res, next) => {
+    const npp = req.params.npp;
+    const { nama, role, jabatan, no_telp, email, entity, grup, rubrik } = req.body;
+    const query = `
+        UPDATE pics
+        SET nama = ?, role = ?, jabatan = ?, no_telp = ?, email = ?, entity = ?, grup = ?, rubrik = ?
+        WHERE npp = ?
+    `;
+    const params = [nama, role, jabatan, no_telp, email, entity, grup, rubrik, npp];
+    sql.query(connectionString, query, params, (err, result) => {
+        if (err) return next(err);
+        if (result.rowsAffected === 0) {
+            return res.status(404).send('PIC tidak ditemukan.');
+        }
+        res.send('PIC berhasil diupdate.');
+    });
+});
+
+// Endpoint untuk menghapus PIC
+picsRouter.delete('/:npp', (req, res, next) => {
+    const npp = req.params.npp;
+    const query = "DELETE FROM pics WHERE npp = ?";
+    sql.query(connectionString, query, [npp], (err, result) => {
+        if (err) return next(err);
+        if (result.rowsAffected === 0) {
+            return res.status(404).send('PIC tidak ditemukan.');
+        }
+        res.send('PIC berhasil dihapus.');
     });
 });
 
@@ -96,9 +150,6 @@ appsRouter.get('/:id/pics', (req, res, next) => {
 });
 
 app.use('/api/apps', appsRouter);
-
-// Mengelompokkan rute untuk /api/pics
-const picsRouter = express.Router();
 
 // Endpoint untuk mendapatkan semua PIC
 picsRouter.get('/', (req, res, next) => {
