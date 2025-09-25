@@ -31,8 +31,8 @@ function DownloadPage() {
                             <Card.Text>
                                 Unduh seluruh data aplikasi yang tersedia dalam format CSV.
                             </Card.Text>
-                            <Button variant="primary" onClick={() => handleDownload(downloadAppsCsv, 'aplikasi.csv')}>
-                                Unduh Apps.csv
+                            <Button variant="primary" onClick={() => handleDownload(downloadAppsCsv, 'apps.csv')}>
+                                Unduh
                             </Button>
                         </Card.Body>
                     </Card>
@@ -44,8 +44,8 @@ function DownloadPage() {
                             <Card.Text>
                                 Unduh seluruh data PIC yang tersedia dalam format CSV.
                             </Card.Text>
-                            <Button variant="success" onClick={() => handleDownload(downloadPicsCsv, 'pic.csv')}>
-                                Unduh PIC.csv
+                            <Button variant="success" onClick={() => handleDownload(downloadPicsCsv, 'pics.csv')}>
+                                Unduh
                             </Button>
                         </Card.Body>
                     </Card>
@@ -55,10 +55,10 @@ function DownloadPage() {
                         <Card.Body>
                             <Card.Title>Unduh Data Relasi</Card.Title>
                             <Card.Text>
-                                Unduh seluruh data relasi antara aplikasi dan PIC dalam format CSV.
+                                Unduh
                             </Card.Text>
-                            <Button variant="info" onClick={() => handleDownload(downloadAppPicRelationsCsv, 'app_pic_relations.csv')}>
-                                Unduh Relasi.csv
+                            <Button variant="info" onClick={() => handleDownload(downloadAppPicRelationsCsv, 'app_pic_map.csv')}>
+                                Unduh
                             </Button>
                         </Card.Body>
                     </Card>
