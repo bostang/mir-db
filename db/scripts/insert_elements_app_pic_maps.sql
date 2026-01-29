@@ -1,6 +1,6 @@
 -- JALANKAN SETERLAH insert_elements_pics.sql
 
-INSERT INTO [dbo].[app_pic_map] (
+INSERT INTO [dbo].[people_apps_map] (
     [application_id],
     [note],
     [npp]

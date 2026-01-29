@@ -6,23 +6,23 @@ SELECT [application_id], [nama_aplikasi]
 
 SELECT p.*
 FROM [dbo].[pics] p
-JOIN [dbo].[app_pic_map] apm ON p.npp = apm.npp
+JOIN [dbo].[people_apps_map] apm ON p.npp = apm.npp
 WHERE apm.application_id = 'ABOAST0111';
 
 -- Menampilkan aplikasi yang dipegang suatu PIC
 SELECT a.*
 FROM [dbo].[apps] a
-JOIN [dbo].[app_pic_map] apm ON a.application_id = apm.application_id
+JOIN [dbo].[people_apps_map] apm ON a.application_id = apm.application_id
 WHERE apm.npp = '64202';
 
 
 -- Menampilkan semua aplikasi : SPECIAL APP
 
-SELECT [application_id], [nama_aplikasi], [deskripsi_singkat]
+SELECT [application_id], [nama_aplikasi], [deskripsi_aplikasi]
     FROM [mir_db].[dbo].[apps]
     -- WHERE [nama_aplikasi] LIKE '%SKA%';
     -- WHERE [nama_aplikasi] LIKE '%CMS%';
-    WHERE [deskripsi_singkat] LIKE '%Special%';
+    WHERE [deskripsi_aplikasi] LIKE '%Special%';
 
 -- special code :
 
@@ -50,7 +50,7 @@ SELECT
 SELECT
         *
     FROM
-        [dbo].[app_pic_map];
+        [dbo].[people_apps_map];
 
 SELECT
         *

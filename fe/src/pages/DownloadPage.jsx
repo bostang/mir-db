@@ -1,5 +1,5 @@
 import { Container, Button, Card, Row, Col } from 'react-bootstrap';
-import { downloadAppsCsv, downloadPicsCsv, downloadAppPicRelationsCsv } from '../services/api';
+import { downloadAppsCsv, downloadPeopleCsv, downloadAppPeopleRelationsCsv } from '../services/api';
 
 function DownloadPage() {
 
@@ -44,7 +44,7 @@ function DownloadPage() {
                             <Card.Text>
                                 Unduh seluruh data PIC yang tersedia dalam format CSV.
                             </Card.Text>
-                            <Button variant="success" onClick={() => handleDownload(downloadPicsCsv, 'pics.csv')}>
+                            <Button variant="success" onClick={() => handleDownload(downloadPeopleCsv, 'people.csv')}>
                                 Unduh
                             </Button>
                         </Card.Body>
@@ -57,8 +57,22 @@ function DownloadPage() {
                             <Card.Text>
                                 Unduh
                             </Card.Text>
-                            <Button variant="info" onClick={() => handleDownload(downloadAppPicRelationsCsv, 'app_pic_map.csv')}>
+                            <Button variant="info" onClick={() => handleDownload(downloadAppPeopleRelationsCsv, 'people_apps_map.csv')}>
                                 Unduh
+                            </Button>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                {/* Card Baru untuk Pranala */}
+                <Col md={4} className="mb-4">
+                    <Card className="shadow-sm border-warning">
+                        <Card.Body>
+                            <Card.Title>Unduh Data Pranala</Card.Title>
+                            <Card.Text>
+                                Unduh daftar link Docs dan Warroom aplikasi dalam format CSV.
+                            </Card.Text>
+                            <Button variant="warning" onClick={() => handleDownload(downloadLinksCsv, 'links.csv')}>
+                                Unduh Links
                             </Button>
                         </Card.Body>
                     </Card>

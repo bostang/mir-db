@@ -33,7 +33,7 @@ Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi secara lokal.
 
 * Node.js (versi 16 atau lebih baru)
 * npm (atau yarn)
-* Microsoft SQL Server dengan database `mir_db` dan tabel yang relevan (`apps`, `pics`, `app_pic_map`).
+* Microsoft SQL Server dengan database `mir_db` dan tabel yang relevan (`apps`, `people`, `people_apps_map`).
 
 ### 1\. Klon Repositori
 

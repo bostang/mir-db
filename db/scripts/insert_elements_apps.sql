@@ -1,7 +1,7 @@
 INSERT INTO [dbo].[apps] (
     [application_id],
     [nama_aplikasi],
-    [deskripsi_singkat],
+    [deskripsi_aplikasi],
     [business_owner],
     [system_owner],
     [criticality],

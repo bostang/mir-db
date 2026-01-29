@@ -11,16 +11,16 @@ Pastikan bahwa sudah membuat database `mim_db` di SQL Server.
 Jalankan secara berurutan:
 
 1. `create_tables.sql`
-2. `insert_elements_apps.sql`
-3. `insert_elements_pics.sql`
-4. `insert_elements_app_pic_maps.sql`
+2. `insert_apps.sql`
+3. `insert_people.sql`
+4. `insert_people_apps_maps.sql`
 
 ## 🗃️ Struktur Tabel
 
 - **`apps`**: Menyimpan informasi aplikasi.
-- **`pics`**: Menyimpan informasi PIC (Person In Charge).
+- **`people`**: Menyimpan informasi PIC (Person In Charge).
 - **`links`**: Menyimpan pranala terkait aplikasi.
-- **`app_pic_map`**: Tabel penghubung antara aplikasi dan PIC (many-to-many).
+- **`people_apps_map`**: Tabel penghubung antara aplikasi dan PIC (many-to-many).
 
 ---
 
@@ -35,13 +35,13 @@ SELECT * FROM [dbo].[apps];
 ### 2. Menampilkan Semua PIC
 
 ```sql
-SELECT * FROM [dbo].[pics];
+SELECT * FROM [dbo].[people];
 ```
 
 ### 3. Menampilkan Semua Relasi Aplikasi dan PIC
 
 ```sql
-SELECT * FROM [dbo].[app_pic_map];
+SELECT * FROM [dbo].[people_apps_map];
 ```
 
 ---
@@ -59,9 +59,9 @@ WHERE LOWER([nama_aplikasi]) LIKE '%cxo%';
 ### 5. Cari Aplikasi Berdasarkan Kata Kunci di Deskripsi
 
 ```sql
-SELECT [application_id], [nama_aplikasi], [deskripsi_singkat]
+SELECT [application_id], [nama_aplikasi], [deskripsi_aplikasi]
 FROM [dbo].[apps]
-WHERE [deskripsi_singkat] LIKE '%Special%';
+WHERE [deskripsi_aplikasi] LIKE '%Special%';
 ```
 
 ---
@@ -101,8 +101,8 @@ Daftar kode khusus:
 
 ```sql
 SELECT p.*
-FROM [dbo].[pics] p
-JOIN [dbo].[app_pic_map] apm ON p.npp = apm.npp
+FROM [dbo].[people] p
+JOIN [dbo].[people_apps_map] apm ON p.npp = apm.npp
 WHERE apm.application_id = 'AMOLOM0001';
 ```
 
@@ -111,7 +111,7 @@ WHERE apm.application_id = 'AMOLOM0001';
 ```sql
 SELECT a.*
 FROM [dbo].[apps] a
-JOIN [dbo].[app_pic_map] apm ON a.application_id = apm.application_id
+JOIN [dbo].[people_apps_map] apm ON a.application_id = apm.application_id
 WHERE apm.npp = '123456';
 ```
 

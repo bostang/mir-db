@@ -1,5 +1,5 @@
 -- HAPUS SEMUA TABEL
-DROP TABLE IF EXISTS [dbo].[app_pic_map];
+DROP TABLE IF EXISTS [dbo].[people_apps_map];
 DROP TABLE IF EXISTS [dbo].[pics];
 DROP TABLE IF EXISTS [dbo].[links];
 DROP TABLE IF EXISTS [dbo].[apps];
@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS [dbo].[apps];
 CREATE TABLE [dbo].[apps] (
     [application_id]    CHAR (10)     UNIQUE NOT NULL,
     [nama_aplikasi]     VARCHAR (255) NOT NULL,
-    [deskripsi_singkat] TEXT          NULL,
+    [deskripsi_aplikasi] TEXT          NULL,
     [business_owner]    VARCHAR (255) NULL,
     [system_owner]      VARCHAR (255) NULL,
     [criticality]       VARCHAR (50)  NULL,
@@ -52,7 +52,7 @@ CREATE TABLE [dbo].[links] (
 );
 
 -- BUAT TABEL PENGHUBUNG APLIKASI DENGAN PIC (MANY-TO-MANY)
-CREATE TABLE [dbo].[app_pic_map] (
+CREATE TABLE [dbo].[people_apps_map] (
     [application_id] CHAR(10)  NULL,
     [note] TEXT NULL,
     [npp] VARCHAR(6) NULL

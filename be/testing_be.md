@@ -14,7 +14,7 @@ curl -X POST \
   -d '{
     "application_id": "APISUBMIT1",
     "nama_aplikasi": "API Submission Test",
-    "deskripsi_singkat": "Aplikasi untuk mengetes endpoint",
+    "deskripsi_aplikasi": "Aplikasi untuk mengetes endpoint",
     "business_owner": "Tim API"
   }' \
   http://localhost:5000/api/apps
@@ -33,7 +33,7 @@ curl -X PUT \
   -H "Content-Type: application/json" \
   -d '{
     "nama_aplikasi": "API Submission Test Updated",
-    "deskripsi_singkat": "Deskripsi yang sudah diupdate"
+    "deskripsi_aplikasi": "Deskripsi yang sudah diupdate"
   }' \
   http://localhost:5000/api/apps/APISUBMIT1
 ```

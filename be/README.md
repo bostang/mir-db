@@ -62,10 +62,10 @@ Berikut adalah deskripsi *endpoint* API utama. Semua *endpoint* menggunakan form
 
 | Metode | Endpoint                 | Deskripsi                          |
 |:-------|:-------------------------|:-----------------------------------|
-| `GET`  | `/api/pics`              | Mengambil semua data PIC.          |
-| `POST` | `/api/pics`              | Menambah PIC baru.                 |
-| `PUT`  | `/api/pics/:id`          | Memperbarui data PIC.              |
-| `DELETE`|`/api/pics/:id`           | Menghapus PIC.                     |
+| `GET`  | `/api/people`              | Mengambil semua data PIC.          |
+| `POST` | `/api/people`              | Menambah PIC baru.                 |
+| `PUT`  | `/api/people/:id`          | Memperbarui data PIC.              |
+| `DELETE`|`/api/people/:id`           | Menghapus PIC.                     |
 
 ### Manajemen Tautan
 
@@ -86,7 +86,7 @@ Berikut adalah deskripsi *endpoint* API utama. Semua *endpoint* menggunakan form
     {
       "application_id": "APL-001",
       "nama_aplikasi": "Sistem Inventaris",
-      "deskripsi_singkat": "Aplikasi untuk melacak inventaris.",
+      "deskripsi_aplikasi": "Aplikasi untuk melacak inventaris.",
       "business_owner": "John Doe"
     }
     ```

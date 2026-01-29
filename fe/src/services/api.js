@@ -10,7 +10,12 @@ const api = axios.create({
 });
 
 // Fungsi untuk mendapatkan semua PIC
-export const getPics = () => api.get('/pics');
+// export const getPeople = () => api.get('/people');
+// Tambahkan parameter page, limit, dan search
+export const getPeople = (page = 1, limit = 50, search = '') => 
+    api.get('/people', { 
+        params: { page, limit, search } 
+    });
 
 // Fungsi untuk mendapatkan semua aplikasi
 export const getApps = () => api.get('/apps');
@@ -20,33 +25,41 @@ export const createApp = (appData) => api.post('/apps', appData);
 export const updateApp = (id, appData) => api.put(`/apps/${id}`, appData);
 export const deleteApp = (id) => api.delete(`/apps/${id}`);
 
-export const getPicsByAppId = (appId) => api.get(`/apps/${appId}/pics`);
-export const getAppsByPicNpp = (npp) => api.get(`/pics/${npp}/apps`);
-export const getPicByNpp = (npp) => api.get(`/pics/${npp}`);
+export const getPeopleByAppId = (appId) => api.get(`/apps/${appId}/people`);
+export const getAppsByPeopleNpp = (npp) => api.get(`/people/${npp}/apps`);
+export const getPeopleByNpp = (npp) => api.get(`/people/${npp}`);
 
 // Fungsi untuk mengupdate PIC
-export const updatePic = (npp, picData) => api.put(`/pics/${npp}`, picData);
+export const updatePeople = (npp, peopleData) => api.put(`/people/${npp}`, peopleData);
 
 // Fungsi untuk membuat PIC baru
-export const createPic = (picData) => api.post('/pics', picData);
+export const createPeople = (peopleData) => api.post('/people', peopleData);
 
 // Fungsi untuk menghapus PIC
-export const deletePic = (npp) => api.delete(`/pics/${npp}`);
+export const deletePeople = (npp) => api.delete(`/people/${npp}`);
 
 // Fungsi untuk menambahkan relasi App-PIC
-export const addAppPicRelation = (relationData) => api.post('/app-pic-map', relationData);
+export const addAppPeopleRelation = (relationData) => api.post('/app-people-map', relationData);
 
 // Fungsi untuk mendapatkan semua relasi App-PIC
-export const getAppPicRelations = () => api.get('/app-pic-map');
+export const getAppPeopleRelations = () => api.get('/app-people-map');
 
 // Fungsi untuk menghapus relasi App-PIC
-export const deleteAppPicRelation = (application_id, npp) => api.delete('/app-pic-map', { data: { application_id, npp } });
+export const deleteAppPeopleRelation = (application_id, npp) => api.delete('/app-people-map', { data: { application_id, npp } });
 
 // Fungsi untuk mengunduh data aplikasi sebagai CSV
 export const downloadAppsCsv = () => api.get('/apps/download/csv', { responseType: 'blob' });
 
 // Fungsi untuk mengunduh data PIC sebagai CSV
-export const downloadPicsCsv = () => api.get('/pics/download/csv', { responseType: 'blob' });
+export const downloadPeopleCsv = () => api.get('/people/download/csv', { responseType: 'blob' });
 
 // Fungsi untuk mengunduh data relasi sebagai CSV
-export const downloadAppPicRelationsCsv = () => api.get('/app-pic-map/download/csv', { responseType: 'blob' });
+export const downloadAppPeopleRelationsCsv = () => api.get('/app-people-map/download/csv', { responseType: 'blob' });
+
+// Tambahkan ini di bagian bawah api.js
+export const downloadLinksCsv = () => api.get('/links/download/csv', { responseType: 'blob' });
+
+export const getLinks = () => api.get('/links');
+export const createLink = (linkData) => api.post('/links', linkData);
+export const updateLink = (applicationId, linkData) => api.put(`/links/${applicationId}`, linkData);
+export const deleteLink = (applicationId) => api.delete(`/links/${applicationId}`);

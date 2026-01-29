@@ -21,7 +21,7 @@ BEGIN
     FROM
         dbo.apps AS a
     JOIN
-        dbo.app_pic_map AS apm ON a.application_id = apm.application_id
+        dbo.people_apps_map AS apm ON a.application_id = apm.application_id
     JOIN
         dbo.pics AS p ON apm.npp = p.npp
     WHERE

@@ -3,10 +3,11 @@ import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import AppsPage from './pages/AppsPage';
 import AppSearch from './components/AppSearch';
-import PicSearch from './components/PicSearch';
-import PicsPage from './pages/PicsPage';
-import AppPicPage from './pages/AppPicPage';
+import PeopleSearch from './components/PeopleSearch';
+import PeoplePage from './pages/PeoplePage';
+import AppPeoplePage from './pages/AppPeoplePage';
 import DownloadPage from './pages/DownloadPage';
+import LinksPage from './pages/LinksPage'; 
 
 function App() {
   return (
@@ -16,10 +17,11 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/apps" element={<AppsPage />} />
-          <Route path="/pics" element={<PicsPage />} />
-          <Route path="/search/pics" element={<AppSearch />} />
-          <Route path="/search/apps" element={<PicSearch />} />
-          <Route path="/map-pic" element={<AppPicPage />} />
+          <Route path="/people" element={<PeoplePage />} />
+          <Route path="/links" element={<LinksPage />} />
+          <Route path="/search/people" element={<AppSearch />} />
+          <Route path="/search/apps" element={<PeopleSearch />} />
+          <Route path="/map-pic" element={<AppPeoplePage />} />
           <Route path="/download" element={<DownloadPage />} />
         </Routes>
       </div>

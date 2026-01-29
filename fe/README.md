@@ -66,7 +66,7 @@ fe/
 │   ├── components/         # Komponen UI yang dapat digunakan kembali
 │   │   ├── Navbar.jsx
 │   │   ├── AppSearch.jsx
-│   │   └── PicSearch.jsx
+│   │   └── PeopleSearch.jsx
 │   ├── pages/              # Komponen untuk setiap halaman
 │   │   ├── AppsPage.jsx
 │   │   └── LandingPage.jsx
