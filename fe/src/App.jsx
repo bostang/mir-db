@@ -8,6 +8,7 @@ import PeoplePage from './pages/PeoplePage';
 import AppPeoplePage from './pages/AppPeoplePage';
 import DownloadPage from './pages/DownloadPage';
 import LinksPage from './pages/LinksPage'; 
+import ValidatePICPage from './pages/validatePICPage'; 
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/search/apps" element={<PeopleSearch />} />
           <Route path="/map-pic" element={<AppPeoplePage />} />
           <Route path="/download" element={<DownloadPage />} />
+          <Route path="/validate-pic" element={<ValidatePICPage />} />
         </Routes>
       </div>
     </>

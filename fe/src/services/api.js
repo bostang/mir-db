@@ -17,6 +17,9 @@ export const getPeople = (page = 1, limit = 50, search = '') =>
         params: { page, limit, search } 
     });
 
+export const bulkCheckPeople = (emails) => 
+    api.post('/people/bulk-check', { emails });
+
 // Fungsi untuk mendapatkan semua aplikasi
 export const getApps = () => api.get('/apps');
 

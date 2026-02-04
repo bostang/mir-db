@@ -231,6 +231,27 @@ peopleRouter.delete('/:npp', (req, res, next) => {
     });
 });
 
+peopleRouter.post('/bulk-check', (req, res, next) => {
+    const { emails } = req.body;
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.json([]);
+    }
+
+    // Menyiapkan parameter tanda tanya (?) sebanyak jumlah email
+    const placeholders = emails.map(() => '?').join(',');
+    const query = `
+        SELECT npp, nama, division, email 
+        FROM people 
+        WHERE email IN (${placeholders})
+    `;
+
+    sql.query(connectionString, query, emails, (err, rows) => {
+        if (err) return next(err);
+        res.json(rows);
+    });
+});
+
 appsRouter.delete('/:id', (req, res, next) => {
     const applicationId = req.params.id;
     const query = "DELETE FROM apps WHERE application_id = ?";
