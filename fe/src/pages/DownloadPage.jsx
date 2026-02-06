@@ -1,5 +1,5 @@
 import { Container, Button, Card, Row, Col } from 'react-bootstrap';
-import { downloadAppsCsv, downloadPeopleCsv, downloadAppPeopleRelationsCsv } from '../services/api';
+import { downloadAppsCsv, downloadPeopleCsv, downloadAppPeopleRelationsCsv, downloadLinksCsv } from '../services/api';
 
 function DownloadPage() {
 

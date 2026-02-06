@@ -346,14 +346,18 @@ peopleRouter.get('/:npp/apps', (req, res, next) => {
 });
 
 // Endpoint untuk mendapatkan semua relasi app-people
+// 1. Update GET: Tambahkan apm.layer
 app.get('/api/app-people-map', (req, res, next) => {
     const query = `
         SELECT
             apm.application_id,
             a.nama_aplikasi,
             apm.npp,
-            ISNULL(p.nama, 'Data Tidak Ada') AS nama_pic, -- Menggunakan ISNULL sebagai pengaman
-            apm.note
+            ISNULL(p.nama, 'Data Tidak Ada') AS nama_pic,
+            p.posisi,
+            p.division,
+            apm.note,
+            apm.layer
         FROM people_apps_map apm
         LEFT JOIN apps a ON apm.application_id = a.application_id
         LEFT JOIN people p ON apm.npp = p.npp
@@ -383,15 +387,45 @@ app.delete('/api/app-people-map', (req, res, next) => {
 
 // Endpoint untuk menambahkan relasi people ke aplikasi
 app.post('/api/app-people-map', (req, res, next) => {
-    const { application_id, npp, note } = req.body;
+    const { application_id, npp, note, layer } = req.body; // Ambil layer dari body
     if (!application_id || !npp) {
         return res.status(400).send('application_id dan npp harus diisi.');
     }
 
-    const query = "INSERT INTO people_apps_map (application_id, npp, note) VALUES (?, ?, ?)";
-    sql.query(connectionString, query, [application_id, npp, note], (err, result) => {
+    const query = "INSERT INTO people_apps_map (application_id, npp, note, layer) VALUES (?, ?, ?, ?)";
+    sql.query(connectionString, query, [application_id, npp, note, layer], (err, result) => {
         if (err) return next(err);
         res.status(201).send('Relasi berhasil ditambahkan.');
+    });
+});
+
+// Endpoint baru untuk mengunduh data relasi dalam format CSV
+app.get('/api/app-people-map/download/csv', (req, res, next) => {
+    const query = `
+        SELECT
+            apm.application_id,
+            a.nama_aplikasi,
+            apm.npp,
+            p.nama AS nama_people,
+            apm.layer,
+            apm.note
+        FROM people_apps_map apm
+        JOIN apps a ON apm.application_id = a.application_id
+        JOIN people p ON apm.npp = p.npp
+    `;
+    // ... sisa kode convertToCsv sama ...
+});
+
+app.put('/api/app-people-map', (req, res, next) => {
+    const { application_id, npp, note, layer } = req.body;
+    const query = `
+        UPDATE people_apps_map 
+        SET note = ?, layer = ? 
+        WHERE application_id = ? AND npp = ?
+    `;
+    sql.query(connectionString, query, [note, layer, application_id, npp], (err, result) => {
+        if (err) return next(err);
+        res.send('Relasi berhasil diperbarui.');
     });
 });
 
@@ -456,46 +490,6 @@ peopleRouter.get('/download/csv', (req, res, next) => {
         res.status(200).send(csvData);
     });
 });
-
-// Endpoint baru untuk mengunduh data relasi dalam format CSV
-app.get('/api/app-people-map/download/csv', (req, res, next) => {
-    const query = `
-        SELECT
-            apm.application_id,
-            a.nama_aplikasi,
-            apm.npp,
-            p.nama AS nama_people,
-            apm.note
-        FROM people_apps_map apm
-        JOIN apps a ON apm.application_id = a.application_id
-        JOIN people p ON apm.npp = p.npp
-    `;
-    sql.query(connectionString, query, (err, rows) => {
-        if (err) return next(err);
-
-        if (rows.length === 0) {
-            return res.status(404).send('Tidak ada data relasi untuk diunduh.');
-        }
-
-        // Fungsi untuk mengonversi array of objects menjadi string CSV
-        const convertToCsv = (data) => {
-            const header = Object.keys(data[0]).join(',') + '\n';
-            const body = data.map(row => Object.values(row).map(value => {
-                if (value === null) return '';
-                const stringValue = String(value);
-                return stringValue.includes(',') ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
-            }).join(',')).join('\n');
-            return header + body;
-        };
-
-        const csvData = convertToCsv(rows);
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=app_people_relations.csv');
-        res.status(200).send(csvData);
-    });
-});
-
 // Tambahkan ini di bagian linksRouter (sebelum app.use('/api/links', linksRouter))
 linksRouter.get('/download/csv', (req, res, next) => {
     const query = `
@@ -526,8 +520,8 @@ linksRouter.get('/download/csv', (req, res, next) => {
     });
 });
 
-app.use('/api/people', peopleRouter);
 app.use('/api/links', linksRouter);
+app.use('/api/people', peopleRouter);
 
 // Mulai server
 app.listen(PORT, HOST, () => {

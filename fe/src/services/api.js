@@ -59,6 +59,9 @@ export const downloadPeopleCsv = () => api.get('/people/download/csv', { respons
 // Fungsi untuk mengunduh data relasi sebagai CSV
 export const downloadAppPeopleRelationsCsv = () => api.get('/app-people-map/download/csv', { responseType: 'blob' });
 
+// fungsi update relasi
+export const updateAppPeopleRelation = (relationData) => api.put('/app-people-map', relationData);
+
 // Tambahkan ini di bagian bawah api.js
 export const downloadLinksCsv = () => api.get('/links/download/csv', { responseType: 'blob' });
 
