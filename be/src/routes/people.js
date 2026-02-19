@@ -4,26 +4,151 @@ const db = require('../config/db');
 const { convertToCsv } = require('../utils/csvHelper');
 
 // 1. READ (GET semua PIC dengan Pagination & Search)
+// be/src/routes/people.js
+
 router.get('/', (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50; 
+    const limit = parseInt(req.query.limit) || 100; 
     const search = req.query.search || '';
     const offset = (page - 1) * limit;
 
-    let query = `SELECT p.npp, p.nama, p.posisi, p.division, p.email, p.phone FROM people p`;
+    let query = `SELECT npp, nama, posisi, division, email, phone, company FROM people`;
     const params = [];
 
     if (search) {
-        // PERBAIKAN: Tambahkan filter untuk kolom phone dengan CAST ke VARCHAR
-        query += ` WHERE p.nama LIKE '%' + ? + '%' 
-                   OR p.npp LIKE '%' + ? + '%' 
-                   OR CAST(p.phone AS VARCHAR) LIKE '%' + ? + '%'`;
-        params.push(search, search, search); // Tambahkan parameter ketiga untuk phone
+        const pattern = `%${search}%`;
+        // Menambahkan filter ke kolom division, email, dan posisi
+        query += ` WHERE nama LIKE ? 
+                   OR npp LIKE ? 
+                   OR email LIKE ? 
+                   OR division LIKE ? 
+                   OR posisi LIKE ?`;
+        params.push(pattern, pattern, pattern, pattern, pattern);
     }
 
-    query += ` ORDER BY p.nama OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
+    query += ` ORDER BY npp DESC OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
 
     db.query(query, params, (err, rows) => {
+        if (err) return next(err);
+        res.json(rows);
+    });
+});
+
+// 1. ENDPOINT BULK UPDATE
+// 1. ENDPOINT BULK UPDATE (Pastikan tetap di atas router.get('/:npp'))
+// be/src/routes/people.js
+
+router.put('/bulk-update', async (req, res, next) => {
+    const { npps, fields } = req.body;
+
+    if (!npps || !Array.isArray(npps) || npps.length === 0 || !fields) {
+        return res.status(400).send('Data tidak lengkap.');
+    }
+
+    const filteredFields = {};
+    ['company', 'division', 'posisi'].forEach(key => {
+        if (fields[key]) filteredFields[key] = fields[key];
+    });
+
+    if (Object.keys(filteredFields).length === 0) {
+        return res.status(400).send('Tidak ada kolom valid.');
+    }
+
+    const setClauses = Object.keys(filteredFields).map(key => `${key} = ?`).join(', ');
+    const updateValues = Object.values(filteredFields);
+    
+    // PERBAIKAN: Buat jumlah placeholder sesuai jumlah NPP
+    const placeholders = npps.map(() => '?').join(',');
+
+    // Query SQL final
+    const query = `UPDATE people SET ${setClauses} WHERE npp IN (${placeholders})`;
+    
+    // Gabungkan parameter: nilai kolom dulu, baru daftar NPP
+    const finalParams = [...updateValues, ...npps];
+
+    db.query(query, finalParams, (err, result) => {
+        if (err) {
+            console.error("SQL Error:", err.message);
+            return res.status(500).json({ message: "Database Error", detail: err.message });
+        }
+        res.json({ message: 'Update berhasil', count: npps.length });
+    });
+});
+
+
+// 2. ENDPOINT BULK INSERT PEOPLE (DARI CSV)
+router.post('/bulk-insert', async (req, res, next) => {
+    const { people } = req.body; // Array of {nama, email, division}
+
+    if (!people || !Array.isArray(people)) {
+        return res.status(400).send('Data people (array) diperlukan.');
+    }
+
+    try {
+        let currentNextNum = await getNextNppNumber();
+        const results = [];
+        
+        // Kita gunakan loop untuk memastikan setiap orang dapat NPP unik
+        // Note: Untuk performa ribuan data, gunakan bulk insert SQL, 
+        // tapi untuk ratusan data, alur ini lebih aman bagi logic NPP custom Anda.
+        for (const person of people) {
+            const newNpp = `X${String(currentNextNum).padStart(4, '0')}`;
+            
+            // Cek apakah email sudah ada (opsional tapi disarankan)
+            // Di sini kita langsung insert, jika email PK/Unique maka akan error di catch
+            const insertQuery = `
+                INSERT INTO people (npp, nama, email, division, company) 
+                VALUES (?, ?, ?, ?, ?)
+            `;
+            
+            await new Promise((resolve, reject) => {
+                db.query(insertQuery, [
+                    newNpp, 
+                    person.nama, 
+                    person.email, 
+                    person.division || 'EXTERNAL/UNKNOWN', 
+                    person.company || null
+                ], (err) => {
+                    if (err) {
+                        // Jika email duplikat, kita lewati atau catat errornya
+                        console.error(`Gagal insert ${person.email}:`, err.message);
+                        results.push({ email: person.email, status: 'failed', reason: err.message });
+                        resolve();
+                    } else {
+                        results.push({ email: person.email, npp: newNpp, status: 'success' });
+                        currentNextNum++; // Naikkan angka untuk urutan berikutnya
+                        resolve();
+                    }
+                });
+            });
+        }
+
+        res.status(201).json({
+            message: 'Proses bulk insert selesai.',
+            details: results
+        });
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+// 3. BULK CHECK (POST untuk verifikasi email masal)
+router.post('/bulk-check', (req, res, next) => {
+    const { emails } = req.body;
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.json([]);
+    }
+
+    const placeholders = emails.map(() => '?').join(',');
+    const query = `
+        SELECT npp, nama, division, email 
+        FROM people 
+        WHERE email IN (${placeholders})
+    `;
+
+    db.query(query, emails, (err, rows) => {
         if (err) return next(err);
         res.json(rows);
     });
@@ -47,26 +172,7 @@ router.get('/download/csv', (req, res, next) => {
     });
 });
 
-// 3. BULK CHECK (POST untuk verifikasi email masal)
-router.post('/bulk-check', (req, res, next) => {
-    const { emails } = req.body;
 
-    if (!emails || !Array.isArray(emails) || emails.length === 0) {
-        return res.json([]);
-    }
-
-    const placeholders = emails.map(() => '?').join(',');
-    const query = `
-        SELECT npp, nama, division, email 
-        FROM people 
-        WHERE email IN (${placeholders})
-    `;
-
-    db.query(query, emails, (err, rows) => {
-        if (err) return next(err);
-        res.json(rows);
-    });
-});
 
 // 4. READ DETAIL (GET berdasarkan NPP)
 router.get('/:npp', (req, res, next) => {
@@ -148,5 +254,29 @@ router.delete('/:npp', (req, res, next) => {
         res.send('PIC berhasil dihapus.');
     });
 });
+
+// --- HELPER UNTUK GENERATE NEXT NPP ---
+// Fungsi ini mengembalikan angka terakhir dari NPP berformat X0000
+const getNextNppNumber = () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT TOP 1 npp 
+            FROM people 
+            WHERE npp LIKE 'X%' AND ISNUMERIC(SUBSTRING(npp, 2, LEN(npp))) = 1
+            ORDER BY CAST(SUBSTRING(npp, 2, LEN(npp)) AS INT) DESC
+        `;
+        db.query(query, (err, rows) => {
+            if (err) return reject(err);
+            if (rows.length > 0) {
+                const lastNum = parseInt(rows[0].npp.replace(/\D/g, ''), 10);
+                resolve(lastNum + 1);
+            } else {
+                resolve(154); // Start default jika tabel kosong
+            }
+        });
+    });
+};
+
+
 
 module.exports = router;

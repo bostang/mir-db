@@ -71,3 +71,12 @@ export const updateLink = (applicationId, linkData) => api.put(`/links/${applica
 export const deleteLink = (applicationId) => api.delete(`/links/${applicationId}`);
 
 export const instantRegisterPIC = (data) => api.post('/app-people-map/instant-register', data);
+
+// bulk edit
+// Bulk Update Company berdasarkan daftar NPP
+export const bulkUpdatePeopleCompany = (data) => api.put('/people/bulk-update', data);
+
+// Bulk Insert People dari file CSV
+export const bulkInsertPeople = (data) => 
+    api.post('/people/bulk-insert', { people: data });
+

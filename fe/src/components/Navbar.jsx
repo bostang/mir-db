@@ -17,6 +17,7 @@ function AppNavbar() {
           <Nav.Link as={Link} to="/search/apps">Cari Aplikasi</Nav.Link>
           <Nav.Link as={Link} to="/download">Unduh Data</Nav.Link>
           <Nav.Link as={Link} to="/validate-pic">Validasi PIC</Nav.Link>
+          <Nav.Link as={Link} to="/bulk-action-people">Bulk Action People</Nav.Link>
         </Nav>
       </Navbar.Collapse>
     </Navbar>
