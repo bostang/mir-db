@@ -14,9 +14,11 @@ router.get('/', (req, res, next) => {
     const params = [];
 
     if (search) {
-        // Menggunakan operator + untuk penggabungan string yang lebih aman di SQL Server
-        query += ` WHERE p.nama LIKE '%' + ? + '%' OR p.npp LIKE '%' + ? + '%'`;
-        params.push(search, search);
+        // PERBAIKAN: Tambahkan filter untuk kolom phone dengan CAST ke VARCHAR
+        query += ` WHERE p.nama LIKE '%' + ? + '%' 
+                   OR p.npp LIKE '%' + ? + '%' 
+                   OR CAST(p.phone AS VARCHAR) LIKE '%' + ? + '%'`;
+        params.push(search, search, search); // Tambahkan parameter ketiga untuk phone
     }
 
     query += ` ORDER BY p.nama OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;

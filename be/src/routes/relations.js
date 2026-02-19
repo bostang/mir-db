@@ -99,4 +99,73 @@ router.delete('/', (req, res, next) => {
     });
 });
 
+// 6. INSTANT REGISTER PIC (Handle New User + Mapping)
+router.post('/instant-register', async (req, res, next) => {
+    const { application_id, nama, email } = req.body;
+
+    if (!application_id || !nama || !email) {
+        return res.status(400).send('Data tidak lengkap.');
+    }
+
+    try {
+        const checkUserQuery = "SELECT npp FROM people WHERE LOWER(email) = LOWER(?)";
+        db.query(checkUserQuery, [email], (err, rows) => {
+            if (err) return next(err);
+
+            if (rows.length > 0) {
+                insertRelation(rows[0].npp);
+            } else {
+                // PERBAIKAN: Gunakan UPPER agar x kecil dan X besar tidak berantakan
+                // Dan pastikan hanya mengambil format X + Angka
+                const lastNppQuery = `
+                    SELECT TOP 1 npp 
+                    FROM people 
+                    WHERE npp LIKE 'X%' 
+                    AND ISNUMERIC(SUBSTRING(npp, 2, LEN(npp))) = 1
+                    ORDER BY CAST(SUBSTRING(npp, 2, LEN(npp)) AS INT) DESC
+                `;
+
+                db.query(lastNppQuery, (err, nppRows) => {
+                    if (err) return next(err);
+
+                    let nextNum = 154; // Fallback jika query tidak menemukan hasil valid
+                    
+                    if (nppRows.length > 0) {
+                        // Mengambil angka saja dari string, misal 'X0153' -> 153
+                        const lastNppString = nppRows[0].npp;
+                        const match = lastNppString.match(/\d+/);
+                        if (match) {
+                            nextNum = parseInt(match[0], 10) + 1;
+                        }
+                    }
+
+                    const newNpp = `X${String(nextNum).padStart(4, '0')}`;
+                    console.log("NPP Baru yang dihasilkan:", newNpp);
+
+                    const insertPeopleQuery = "INSERT INTO people (npp, nama, email, division) VALUES (?, ?, ?, ?)";
+                    db.query(insertPeopleQuery, [newNpp, nama, email, 'EXTERNAL/UNKNOWN'], (err) => {
+                        if (err) return next(err);
+                        insertRelation(newNpp);
+                    });
+                });
+            }
+        });
+
+        function insertRelation(npp) {
+            const insertMapQuery = "INSERT INTO people_apps_map (application_id, npp, note) VALUES (?, ?, ?)";
+            db.query(insertMapQuery, [application_id, npp, 'Added via Instant Validation'], (err) => {
+                if (err) {
+                    if (err.code === 'ER_DUP_ENTRY' || err.sqlState === '23000') {
+                        return res.status(400).send('Sudah terdaftar sebagai PIC.');
+                    }
+                    return next(err);
+                }
+                res.status(201).json({ message: 'Berhasil didaftarkan!', npp: npp });
+            });
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = router;

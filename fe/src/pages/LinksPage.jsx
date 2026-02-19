@@ -8,6 +8,7 @@ const LinkForm = memo(({ apps, editingId, initialData, onSave, onCancel }) => {
         application_id: '', 
         docs_link: '', 
         warroom_link: '', 
+        mini_warroom_link: '',
         notes: '' 
     });
     const [appSearch, setAppSearch] = useState('');
@@ -19,7 +20,7 @@ const LinkForm = memo(({ apps, editingId, initialData, onSave, onCancel }) => {
             setFormData(initialData);
             setAppSearch(editingId ? `${initialData.application_id}` : '');
         } else {
-            setFormData({ application_id: '', docs_link: '', warroom_link: '', notes: '' });
+            setFormData({ application_id: '', docs_link: '', warroom_link: '', mini_warroom_link: '', notes: '' });
             setAppSearch('');
         }
     }, [initialData, editingId]);
@@ -97,6 +98,17 @@ const LinkForm = memo(({ apps, editingId, initialData, onSave, onCancel }) => {
                                     placeholder="https://teams.microsoft.com/..." 
                                     value={formData.warroom_link} 
                                     onChange={(e) => setFormData({...formData, warroom_link: e.target.value})} 
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">Link MINI-Warroom</Form.Label>
+                                <Form.Control 
+                                    type="url" 
+                                    placeholder="https://teams.microsoft.com/..." 
+                                    value={formData.mini_warroom_link} 
+                                    onChange={(e) => setFormData({...formData, mini_warroom_link: e.target.value})} // Diperbaiki: dari warroom_link ke mini_warroom_link
                                 />
                             </Form.Group>
                         </Col>
@@ -230,6 +242,10 @@ function LinksPage() {
                                     {link.warroom_link ? 
                                         <Button as="a" href={link.warroom_link} target="_blank" size="sm" variant="outline-danger">Warroom</Button> : 
                                         <small className="text-muted">No Warroom</small>
+                                    }
+                                    {link.mini_warroom_link ? 
+                                        <Button as="a" href={link.mini_warroom_link} target="_blank" size="sm" variant="outline-success">Mini Warroom</Button> : 
+                                        <small className="text-muted">No Mini-Warroom</small>
                                     }
                                 </div>
                             </td>

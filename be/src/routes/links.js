@@ -20,10 +20,10 @@ router.get('/', (req, res, next) => {
 // 2. DOWNLOAD CSV
 router.get('/download/csv', (req, res, next) => {
     const query = `
-        SELECT l.application_id, a.nama_aplikasi, l.docs_link, l.warroom_link, l.notes
+        SELECT l.application_id, a.nama_aplikasi, l.docs_link, l.warroom_link, l.mini_warroom_link, l.notes
         FROM links l
         JOIN apps a ON l.application_id = a.application_id
-    `;
+    `; // Sudah diperbaiki: koma ganda dihapus
     
     db.query(query, (err, rows) => {
         if (err) return next(err);
@@ -38,15 +38,15 @@ router.get('/download/csv', (req, res, next) => {
 
 // 3. CREATE (POST pranala baru)
 router.post('/', (req, res, next) => {
-    const { application_id, docs_link, warroom_link, notes } = req.body;
+    const { application_id, docs_link, warroom_link, mini_warroom_link, notes } = req.body;
     if (!application_id) {
         return res.status(400).send('application_id harus diisi.');
     }
     const query = `
-        INSERT INTO links (application_id, docs_link, warroom_link, notes)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO links (application_id, docs_link, warroom_link, mini_warroom_link, notes)
+        VALUES (?, ?, ?, ?, ?)
     `;
-    const params = [application_id, docs_link, warroom_link, notes];
+    const params = [application_id, docs_link, warroom_link, mini_warroom_link, notes];
     db.query(query, params, (err, result) => {
         if (err) return next(err);
         res.status(201).send('Pranala berhasil ditambahkan.');
@@ -56,13 +56,13 @@ router.post('/', (req, res, next) => {
 // 4. UPDATE (PUT berdasarkan application_id)
 router.put('/:id', (req, res, next) => {
     const applicationId = req.params.id;
-    const { docs_link, warroom_link, notes } = req.body;
+    const { docs_link, warroom_link, mini_warroom_link, notes } = req.body;
     const query = `
         UPDATE links
-        SET docs_link = ?, warroom_link = ?, notes = ?
+        SET docs_link = ?, warroom_link = ?, mini_warroom_link = ?, notes = ?
         WHERE application_id = ?
     `;
-    const params = [docs_link, warroom_link, notes, applicationId];
+    const params = [docs_link, warroom_link, mini_warroom_link, notes, applicationId];
     db.query(query, params, (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {

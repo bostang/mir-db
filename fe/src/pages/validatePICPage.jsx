@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Container, Table, Form, Card, Alert, Badge, Row, Col, ButtonGroup, Button, ListGroup, Spinner } from 'react-bootstrap';
-import { getApps, getPeopleByAppId, bulkCheckPeople } from '../services/api';
+import { getApps, getPeopleByAppId, bulkCheckPeople, instantRegisterPIC} from '../services/api';
+import axios from 'axios';
 
 function ValidatePICPage() {
     // State Aplikasi & Pencarian
@@ -166,6 +167,36 @@ function ValidatePICPage() {
         return ['All', ...new Set(divs)].sort();
     }, [csvData, masterPeople]);
 
+    const handleInstantAdd = async (person) => {
+        if (!selectedApp) return;
+        
+        setLoading(true);
+        setError(null); // Reset error sebelum mulai
+        try {
+            // Gunakan service yang sudah kita buat
+            await instantRegisterPIC({
+                application_id: selectedApp.application_id,
+                nama: person.nama,
+                email: person.email
+            });
+
+            alert(`Berhasil menambahkan ${person.nama} sebagai PIC!`);
+            
+            // Refresh data PIC aplikasi agar status di tabel berubah
+            const res = await getPeopleByAppId(selectedApp.application_id);
+            const emails = res.data.map(p => (p.email || '').toLowerCase().trim());
+            setAppPICs(emails);
+            
+        } catch (err) {
+            // Tangani pesan error dari backend
+            const errorMsg = err.response?.data || "Gagal mendaftarkan PIC";
+            setError(typeof errorMsg === 'string' ? errorMsg : "Terjadi kesalahan sistem");
+            console.error("Detail Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Container className="mt-4 pb-5">
             <h1 className="mb-4">Validasi PIC Berbasis Attendance</h1>
@@ -274,6 +305,7 @@ function ValidatePICPage() {
                                     <th>Divisi (DB)</th>
                                     <th className="text-center">Status Master</th>
                                     <th className="text-center">Status App</th>
+                                    <th className="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -296,6 +328,18 @@ function ValidatePICPage() {
                                             {item.isRegisteredInApp ? 
                                                 <Badge bg="primary">Sudah Jadi PIC</Badge> : 
                                                 <Badge bg="outline-secondary">Belum Terdaftar</Badge>}
+                                        </td>
+                                        <td className="text-center">
+                                            {!item.isRegisteredInApp && (
+                                                <Button 
+                                                    variant="success" 
+                                                    size="sm"
+                                                    onClick={() => handleInstantAdd(item)}
+                                                    disabled={loading}
+                                                >
+                                                    + Jadikan PIC
+                                                </Button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
