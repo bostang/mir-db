@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { convertToCsv } = require('../utils/csvHelper');
+const { getNextNppNumber} = require('../utils/nppHelper');
+const { success, error } = require('../utils/responseHandler');
 
 // 1. READ (GET semua PIC dengan Pagination & Search)
-// be/src/routes/people.js
 
 router.get('/', (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
@@ -30,19 +31,17 @@ router.get('/', (req, res, next) => {
 
     db.query(query, params, (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Daftar PIC berhasil diambil", rows);
     });
 });
 
-// 1. ENDPOINT BULK UPDATE
 // 1. ENDPOINT BULK UPDATE (Pastikan tetap di atas router.get('/:npp'))
-// be/src/routes/people.js
 
 router.put('/bulk-update', async (req, res, next) => {
     const { npps, fields } = req.body;
 
     if (!npps || !Array.isArray(npps) || npps.length === 0 || !fields) {
-        return res.status(400).send('Data tidak lengkap.');
+        return error(res, 'Data tidak lengkap.', 400);
     }
 
     const filteredFields = {};
@@ -51,7 +50,7 @@ router.put('/bulk-update', async (req, res, next) => {
     });
 
     if (Object.keys(filteredFields).length === 0) {
-        return res.status(400).send('Tidak ada kolom valid.');
+        return error(res, 'Tidak ada kolom valid.', 400);
     }
 
     const setClauses = Object.keys(filteredFields).map(key => `${key} = ?`).join(', ');
@@ -67,11 +66,8 @@ router.put('/bulk-update', async (req, res, next) => {
     const finalParams = [...updateValues, ...npps];
 
     db.query(query, finalParams, (err, result) => {
-        if (err) {
-            console.error("SQL Error:", err.message);
-            return res.status(500).json({ message: "Database Error", detail: err.message });
-        }
-        res.json({ message: 'Update berhasil', count: npps.length });
+        if (err) return next(err); // Biarkan global error handler yang urus
+        success(res, `${npps.length} PIC berhasil diperbarui`, { updated_count: npps.length });
     });
 });
 
@@ -80,7 +76,7 @@ router.delete('/bulk-delete', (req, res, next) => {
     const { npps } = req.body;
 
     if (!npps || !Array.isArray(npps) || npps.length === 0) {
-        return res.status(400).send('Daftar NPP tidak valid.');
+        return error(res, 'Daftar NPP tidak valid.', 400);
     }
 
     // Buat placeholder (?,?,?) sesuai jumlah NPP
@@ -88,21 +84,10 @@ router.delete('/bulk-delete', (req, res, next) => {
     const query = `DELETE FROM people WHERE npp IN (${placeholders})`;
 
     db.query(query, npps, (err, result) => {
-        if (err) {
-            console.error("SQL Delete Error:", err.message);
-            return res.status(500).json({ 
-                message: "Gagal menghapus data dari database", 
-                detail: err.message 
-            });
-        }
-        
-        // rowsAffected tergantung pada driver DB yang Anda gunakan (mysql/mssql)
+        if (err) return next(err); // Biarkan global handler yang urus error 500
         const deletedCount = result.rowsAffected || result.affectedRows || npps.length;
+        success(res, "Hapus masal berhasil", { deleted_count: deletedCount });
         
-        res.json({ 
-            message: 'Hapus berhasil', 
-            deleted_count: deletedCount 
-        });
     });
 });
 
@@ -111,7 +96,7 @@ router.post('/bulk-insert', async (req, res, next) => {
     const { people } = req.body; // Array of {nama, email, division}
 
     if (!people || !Array.isArray(people)) {
-        return res.status(400).send('Data people (array) diperlukan.');
+        return error(res, 'Data people (array) diperlukan.', 400);
     }
 
     try {
@@ -153,10 +138,7 @@ router.post('/bulk-insert', async (req, res, next) => {
             });
         }
 
-        res.status(201).json({
-            message: 'Proses bulk insert selesai.',
-            details: results
-        });
+        success(res, "Proses bulk insert selesai", results, 201);
 
     } catch (error) {
         next(error);
@@ -168,7 +150,7 @@ router.post('/bulk-check', (req, res, next) => {
     const { emails } = req.body;
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
-        return res.json([]);
+        return success(res, "Tidak ada email untuk dicek", []);
     }
 
     const placeholders = emails.map(() => '?').join(',');
@@ -180,7 +162,7 @@ router.post('/bulk-check', (req, res, next) => {
 
     db.query(query, emails, (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Verifikasi email selesai", rows);
     });
 });
 
@@ -191,7 +173,7 @@ router.get('/download/csv', (req, res, next) => {
         if (err) return next(err);
 
         if (rows.length === 0) {
-            return res.status(404).send('Tidak ada data PIC untuk diunduh.');
+            return error(res, 'Tidak ada data PIC untuk diunduh.', 404);
         }
 
         const csvData = convertToCsv(rows);
@@ -211,8 +193,8 @@ router.get('/:npp', (req, res, next) => {
     
     db.query(query, [npp], (err, rows) => {
         if (err) return next(err);
-        if (rows.length === 0) return res.status(404).send('PIC tidak ditemukan.');
-        res.json(rows[0]);
+        if (rows.length === 0) return error(res, 'PIC tidak ditemukan.', 404);
+        success(res, "Detail PIC ditemukan", rows[0]);
     });
 });
 
@@ -227,7 +209,7 @@ router.get('/:npp/apps', (req, res, next) => {
     `;
     db.query(query, [npp], (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, `Daftar aplikasi untuk NPP ${npp} berhasil diambil`, rows);
     });
 });
 
@@ -236,7 +218,7 @@ router.post('/', (req, res, next) => {
     const { npp, nama, posisi, division, email, phone } = req.body;
     
     if (!npp || !nama) {
-        return res.status(400).send('NPP dan nama harus diisi.');
+        return error(res, "NPP dan nama harus diisi", 400);
     }
 
     const query = `
@@ -247,7 +229,7 @@ router.post('/', (req, res, next) => {
 
     db.query(query, params, (err, result) => {
         if (err) return next(err);
-        res.status(201).send('PIC berhasil ditambahkan.');
+        success(res, "PIC berhasil ditambahkan", null, 201);
     });
 });
 
@@ -266,9 +248,9 @@ router.put('/:npp', (req, res, next) => {
     db.query(query, params, (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {
-            return res.status(404).send('PIC tidak ditemukan.');
+            return error(res, "PIC tidak ditemukan", 404);
         }
-        res.send('PIC berhasil diupdate.');
+        success(res, "PIC berhasil diupdate");
     });
 });
 
@@ -279,34 +261,10 @@ router.delete('/:npp', (req, res, next) => {
     db.query(query, [npp], (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {
-            return res.status(404).send('PIC tidak ditemukan.');
+            return error(res, "PIC tidak ditemukan", 404);
         }
-        res.send('PIC berhasil dihapus.');
+        success(res, "PIC berhasil dihapus");
     });
 });
-
-// --- HELPER UNTUK GENERATE NEXT NPP ---
-// Fungsi ini mengembalikan angka terakhir dari NPP berformat X0000
-const getNextNppNumber = () => {
-    return new Promise((resolve, reject) => {
-        const query = `
-            SELECT TOP 1 npp 
-            FROM people 
-            WHERE npp LIKE 'X%' AND ISNUMERIC(SUBSTRING(npp, 2, LEN(npp))) = 1
-            ORDER BY CAST(SUBSTRING(npp, 2, LEN(npp)) AS INT) DESC
-        `;
-        db.query(query, (err, rows) => {
-            if (err) return reject(err);
-            if (rows.length > 0) {
-                const lastNum = parseInt(rows[0].npp.replace(/\D/g, ''), 10);
-                resolve(lastNum + 1);
-            } else {
-                resolve(154); // Start default jika tabel kosong
-            }
-        });
-    });
-};
-
-
 
 module.exports = router;

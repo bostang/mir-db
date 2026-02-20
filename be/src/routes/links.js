@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { convertToCsv } = require('../utils/csvHelper');
+const { success, error } = require('../utils/responseHandler');
 
 // 1. READ (GET semua pranala dengan JOIN ke tabel apps)
 router.get('/', (req, res, next) => {
@@ -13,7 +14,7 @@ router.get('/', (req, res, next) => {
     `;
     db.query(query, (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Daftar pranala berhasil diambil", rows);
     });
 });
 
@@ -27,8 +28,8 @@ router.get('/download/csv', (req, res, next) => {
     
     db.query(query, (err, rows) => {
         if (err) return next(err);
-        if (rows.length === 0) return res.status(404).send('Tidak ada data pranala.');
-
+        if (rows.length === 0) return error(res, "Tidak ada data pranala untuk diunduh", 404);
+        
         const csvData = convertToCsv(rows);
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename=links.csv');
@@ -40,7 +41,7 @@ router.get('/download/csv', (req, res, next) => {
 router.post('/', (req, res, next) => {
     const { application_id, docs_link, warroom_link, mini_warroom_link, notes } = req.body;
     if (!application_id) {
-        return res.status(400).send('application_id harus diisi.');
+        return error(res, "application_id harus diisi", 400);
     }
     const query = `
         INSERT INTO links (application_id, docs_link, warroom_link, mini_warroom_link, notes)
@@ -49,7 +50,7 @@ router.post('/', (req, res, next) => {
     const params = [application_id, docs_link, warroom_link, mini_warroom_link, notes];
     db.query(query, params, (err, result) => {
         if (err) return next(err);
-        res.status(201).send('Pranala berhasil ditambahkan.');
+        success(res, "Pranala berhasil ditambahkan", null, 201);
     });
 });
 
@@ -65,8 +66,9 @@ router.put('/:id', (req, res, next) => {
     const params = [docs_link, warroom_link, mini_warroom_link, notes, applicationId];
     db.query(query, params, (err, result) => {
         if (err) return next(err);
-        if (result.rowsAffected === 0) {
-            return res.status(404).send('Pranala tidak ditemukan.');
+        const affected = result.rowsAffected || result.affectedRows || 0;
+        if (affected === 0) {
+            return error(res, "Pranala tidak ditemukan", 404);
         }
         res.send('Pranala berhasil diupdate.');
     });
@@ -78,10 +80,11 @@ router.delete('/:id', (req, res, next) => {
     const query = "DELETE FROM links WHERE application_id = ?";
     db.query(query, [applicationId], (err, result) => {
         if (err) return next(err);
-        if (result.rowsAffected === 0) {
-            return res.status(404).send('Pranala tidak ditemukan.');
+        const affected = result.rowsAffected || result.affectedRows || 0;
+        if (affected === 0) {
+            return error(res, "Pranala tidak ditemukan", 404);
         }
-        res.send('Pranala berhasil dihapus.');
+        success(res, "Pranala berhasil dihapus");
     });
 });
 

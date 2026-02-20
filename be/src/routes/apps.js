@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db'); // Menggunakan modul database terpusat
 const { convertToCsv } = require('../utils/csvHelper'); // Menggunakan helper CSV
+const { success, error } = require('../utils/responseHandler');
 
 // 1. READ (GET semua aplikasi)
 router.get('/', (req, res, next) => {
     const query = "SELECT * FROM apps";
     db.query(query, (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Daftar aplikasi berhasil diambil", rows);
     });
 });
 
@@ -19,7 +20,8 @@ router.get('/download/csv', (req, res, next) => {
         if (err) return next(err);
 
         if (rows.length === 0) {
-            return res.status(404).send('Tidak ada data aplikasi untuk diunduh.');
+            return error(res, "Tidak ada data aplikasi untuk diunduh", 404);
+            
         }
 
         const csvData = convertToCsv(rows);
@@ -37,9 +39,9 @@ router.get('/:id', (req, res, next) => {
     db.query(query, [applicationId], (err, rows) => {
         if (err) return next(err);
         if (rows.length === 0) {
-            return res.status(404).send('Aplikasi tidak ditemukan.');
+            return error(res, "Aplikasi tidak ditemukan", 404);
         }
-        res.json(rows[0]);
+        success(res, "Detail aplikasi ditemukan", rows[0]);
     });
 });
 
@@ -47,12 +49,12 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
     const { application_id, nama_aplikasi, deskripsi_aplikasi, business_owner } = req.body;
     if (!application_id || !nama_aplikasi) {
-        return res.status(400).send('application_id dan nama_aplikasi harus diisi.');
+        return error(res, "application_id dan nama_aplikasi harus diisi", 400);
     }
     const query = "INSERT INTO apps (application_id, nama_aplikasi, deskripsi_aplikasi, business_owner) VALUES (?, ?, ?, ?)";
     db.query(query, [application_id, nama_aplikasi, deskripsi_aplikasi, business_owner], (err, result) => {
         if (err) return next(err);
-        res.status(201).send('Aplikasi berhasil ditambahkan.');
+        success(res, "Aplikasi berhasil ditambahkan", null, 201);
     });
 });
 
@@ -64,9 +66,9 @@ router.put('/:id', (req, res, next) => {
     db.query(query, [nama_aplikasi, deskripsi_aplikasi, business_owner, applicationId], (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {
-            return res.status(404).send('Aplikasi tidak ditemukan.');
+            return error(res, "Aplikasi tidak ditemukan", 404);
         }
-        res.send('Aplikasi berhasil diupdate.');
+        success(res, "Aplikasi berhasil diupdate");
     });
 });
 
@@ -77,9 +79,9 @@ router.delete('/:id', (req, res, next) => {
     db.query(query, [applicationId], (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {
-            return res.status(404).send('Aplikasi tidak ditemukan.');
+            return error(res, "Aplikasi tidak ditemukan", 404);
         }
-        res.send('Aplikasi berhasil dihapus.');
+        success(res, "Aplikasi berhasil dihapus");
     });
 });
 
@@ -94,7 +96,7 @@ router.get('/:id/people', (req, res, next) => {
     `;
     db.query(query, [applicationId], (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Daftar PIC aplikasi berhasil diambil", rows);
     });
 });
 

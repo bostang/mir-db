@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { convertToCsv } = require('../utils/csvHelper');
+const { allowedLayers } = require('../utils/constants');
+const { success, error } = require('../utils/responseHandler');
 
 // 1. READ (GET semua relasi app-people dengan detail lengkap)
 router.get('/', (req, res, next) => {
@@ -21,19 +23,16 @@ router.get('/', (req, res, next) => {
     `;
     db.query(query, (err, rows) => {
         if (err) return next(err);
-        res.json(rows);
+        success(res, "Daftar relasi berhasil diambil", rows);
     });
 });
 
 // 7. BULK INSERT RELATIONS
 router.post('/bulk-insert', async (req, res, next) => {
     const { relations } = req.body;
-    
-    // Daftar opsi layer yang diizinkan
-    const allowedLayers = ['L1', 'L2', 'L3', 'Business', 'Surroundings', 'Management', 'Principal', 'Others'];
 
     if (!relations || !Array.isArray(relations)) {
-        return res.status(400).send('Data tidak valid.');
+        return error(res, 'Data tidak valid.', 400);
     }
 
     const results = {
@@ -81,10 +80,7 @@ router.post('/bulk-insert', async (req, res, next) => {
     });
 
     await Promise.all(promises);
-    res.json({ 
-        message: 'Proses bulk insert selesai', 
-        summary: results 
-    });
+    success(res, 'Proses bulk insert selesai', results);
 });
 
 // 8. BULK DELETE RELATIONS
@@ -92,7 +88,7 @@ router.delete('/bulk-delete', (req, res, next) => {
     const { relations } = req.body; // Array of {application_id, npp, layer}
 
     if (!relations || !Array.isArray(relations) || relations.length === 0) {
-        return res.status(400).send('Data tidak valid.');
+        return error(res, 'Data tidak valid.', 400);
     }
 
     // Karena PK nya komposit, kita hapus satu per satu dalam loop
@@ -107,7 +103,7 @@ router.delete('/bulk-delete', (req, res, next) => {
     });
 
     Promise.all(promises).then(() => {
-        res.json({ message: 'Berhasil menghapus relasi terpilih.' });
+        success(res, 'Berhasil menghapus relasi terpilih.');
     }).catch(next);
 });
 
@@ -119,10 +115,8 @@ router.put('/bulk-update', async (req, res, next) => {
     // console.log("=== API BULK UPDATE DIPANGGIL ===");
     // console.log("Payload:", JSON.stringify(req.body, null, 2));
 
-    const allowedLayers = ['L1', 'L2', 'L3', 'Business', 'Surroundings', 'Management', 'Principal', 'Others'];
-
     if (!keys || !Array.isArray(keys) || keys.length === 0 || !fields) {
-        return res.status(400).send('Data tidak lengkap.');
+        return error(res, 'Data tidak lengkap.', 400);
     }
 
     const promises = keys.map(key => {
@@ -170,7 +164,7 @@ router.put('/bulk-update', async (req, res, next) => {
 
     try {
         const results = await Promise.all(promises);
-        res.json({ message: 'Proses update selesai', details: results });
+        success(res, 'Proses update selesai', results);
     } catch (error) {
         next(error);
     }
@@ -192,7 +186,7 @@ router.get('/download/csv', (req, res, next) => {
     `;
     db.query(query, (err, rows) => {
         if (err) return next(err);
-        if (rows.length === 0) return res.status(404).send('Tidak ada data relasi.');
+        if (rows.length === 0) return error(res, 'Tidak ada data relasi.', 404);
 
         const csvData = convertToCsv(rows);
         res.setHeader('Content-Type', 'text/csv');
@@ -205,13 +199,13 @@ router.get('/download/csv', (req, res, next) => {
 router.post('/', (req, res, next) => {
     const { application_id, npp, note, layer } = req.body;
     if (!application_id || !npp) {
-        return res.status(400).send('application_id dan npp harus diisi.');
+        return error(res, 'App ID dan NPP harus diisi.', 400);
     }
 
     const query = "INSERT INTO people_apps_map (application_id, npp, note, layer) VALUES (?, ?, ?, ?)";
     db.query(query, [application_id, npp, note, layer], (err, result) => {
         if (err) return next(err);
-        res.status(201).send('Relasi berhasil ditambahkan.');
+        success(res, 'Relasi berhasil ditambahkan.', null, 201);
     });
 });
 
@@ -219,7 +213,7 @@ router.post('/', (req, res, next) => {
 router.put('/', (req, res, next) => {
     const { application_id, npp, note, layer } = req.body;
     if (!application_id || !npp) {
-        return res.status(400).send('application_id dan npp harus diisi untuk update.');
+        return error(res, 'App ID dan NPP harus diisi untuk update.', 400);
     }
 
     const query = `
@@ -229,7 +223,7 @@ router.put('/', (req, res, next) => {
     `;
     db.query(query, [note, layer, application_id, npp], (err, result) => {
         if (err) return next(err);
-        res.send('Relasi berhasil diperbarui.');
+        success(res, 'Relasi berhasil diperbarui.');
     });
 });
 
@@ -237,16 +231,16 @@ router.put('/', (req, res, next) => {
 router.delete('/', (req, res, next) => {
     const { application_id, npp } = req.body;
     if (!application_id || !npp) {
-        return res.status(400).send('application_id dan npp harus diisi.');
+        return error(res, 'App ID dan NPP harus diisi.', 400);
     }
 
     const query = "DELETE FROM people_apps_map WHERE application_id = ? AND npp = ?";
     db.query(query, [application_id, npp], (err, result) => {
         if (err) return next(err);
         if (result.rowsAffected === 0) {
-            return res.status(404).send('Relasi tidak ditemukan.');
+            return error(res, 'Relasi tidak ditemukan.', 404);
         }
-        res.send('Relasi berhasil dihapus.');
+        success(res, 'Relasi berhasil dihapus.');
     });
 });
 
@@ -255,7 +249,7 @@ router.post('/instant-register', async (req, res, next) => {
     const { application_id, nama, email } = req.body;
 
     if (!application_id || !nama || !email) {
-        return res.status(400).send('Data tidak lengkap.');
+        return error(res, 'Data tidak lengkap.', 400);
     }
 
     try {
@@ -307,11 +301,11 @@ router.post('/instant-register', async (req, res, next) => {
             db.query(insertMapQuery, [application_id, npp, 'Added via Instant Validation'], (err) => {
                 if (err) {
                     if (err.code === 'ER_DUP_ENTRY' || err.sqlState === '23000') {
-                        return res.status(400).send('Sudah terdaftar sebagai PIC.');
+                        return error(res, 'Sudah terdaftar sebagai PIC.', 400);
                     }
                     return next(err);
                 }
-                res.status(201).json({ message: 'Berhasil didaftarkan!', npp: npp });
+                success(res, 'Berhasil didaftarkan!', { npp: npp }, 201);
             });
         }
     } catch (error) {
