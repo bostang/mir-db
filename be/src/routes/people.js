@@ -75,6 +75,36 @@ router.put('/bulk-update', async (req, res, next) => {
     });
 });
 
+// ENDPOINT BULK DELETE
+router.delete('/bulk-delete', (req, res, next) => {
+    const { npps } = req.body;
+
+    if (!npps || !Array.isArray(npps) || npps.length === 0) {
+        return res.status(400).send('Daftar NPP tidak valid.');
+    }
+
+    // Buat placeholder (?,?,?) sesuai jumlah NPP
+    const placeholders = npps.map(() => '?').join(',');
+    const query = `DELETE FROM people WHERE npp IN (${placeholders})`;
+
+    db.query(query, npps, (err, result) => {
+        if (err) {
+            console.error("SQL Delete Error:", err.message);
+            return res.status(500).json({ 
+                message: "Gagal menghapus data dari database", 
+                detail: err.message 
+            });
+        }
+        
+        // rowsAffected tergantung pada driver DB yang Anda gunakan (mysql/mssql)
+        const deletedCount = result.rowsAffected || result.affectedRows || npps.length;
+        
+        res.json({ 
+            message: 'Hapus berhasil', 
+            deleted_count: deletedCount 
+        });
+    });
+});
 
 // 2. ENDPOINT BULK INSERT PEOPLE (DARI CSV)
 router.post('/bulk-insert', async (req, res, next) => {

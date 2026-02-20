@@ -72,7 +72,7 @@ export const deleteLink = (applicationId) => api.delete(`/links/${applicationId}
 
 export const instantRegisterPIC = (data) => api.post('/app-people-map/instant-register', data);
 
-// bulk edit
+// bulk edit tabel people
 // Bulk Update Company berdasarkan daftar NPP
 export const bulkUpdatePeopleCompany = (data) => api.put('/people/bulk-update', data);
 
@@ -80,3 +80,13 @@ export const bulkUpdatePeopleCompany = (data) => api.put('/people/bulk-update', 
 export const bulkInsertPeople = (data) => 
     api.post('/people/bulk-insert', { people: data });
 
+// Gunakan instance 'api' agar baseURL terpasang otomatis
+export const bulkDeletePeople = (npps) => {
+    return api.delete('/people/bulk-delete', { data: { npps } });
+};
+
+// Bulk insert tabel
+export const getRelations = () => api.get('/app-people-map');
+export const bulkInsertRelations = (relations) => api.post('/app-people-map/bulk-insert', { relations });
+export const bulkDeleteRelations = (relations) => api.delete('/app-people-map/bulk-delete', { data: { relations } });
+export const bulkUpdateRelations = (data) => api.put('/app-people-map/bulk-update', data);

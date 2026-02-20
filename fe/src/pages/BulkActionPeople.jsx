@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Table, Form, Button, Card, Row, Col, Alert, Tabs, Tab } from 'react-bootstrap';
-import { getPeople, bulkUpdatePeopleCompany, bulkInsertPeople } from '../services/api';
+import { getPeople, bulkUpdatePeopleCompany, bulkInsertPeople, bulkDeletePeople } from '../services/api';
 
 function BulkActionPage() {
     // State untuk Bulk Update
@@ -113,36 +113,77 @@ function BulkActionPage() {
     };
 
     // 4. Update Handler (Backend perlu disesuaikan sedikit untuk multi-field)
-    const onBulkUpdate = async () => {
-        if (selectedNpps.length === 0) return alert("Pilih orang terlebih dahulu!");
-        
-        const fieldsToUpdate = Object.fromEntries(
-            Object.entries(updateData).filter(([_, v]) => v !== '')
-        );
+ // 1. Tambahkan fungsi delete di bagian handler
+const onBulkDelete = async () => {
+    if (selectedNpps.length === 0) return alert("Pilih orang terlebih dahulu!");
 
-        if (Object.keys(fieldsToUpdate).length === 0) return alert("Isi minimal satu field!");
+    if (!window.confirm(`⚠️ Konfirmasi: Hapus ${selectedNpps.length} data?`)) return;
 
-        setLoading(true);
-        try {
-            // GUNAKAN fungsi yang di-import, jangan api.put langsung
-            await bulkUpdatePeopleCompany({ 
-                npps: selectedNpps, 
-                fields: fieldsToUpdate 
-            });
+    setLoading(true);
+    try {
+        const res = await bulkDeletePeople(selectedNpps); 
+        setMessage({ 
+            type: 'success', 
+            text: `🗑️ Berhasil menghapus ${res.data?.deleted_count || selectedNpps.length} data.` 
+        });
+        setSelectedNpps([]);
+        setSelectedPeopleData([]);
+        fetchPeople();
+    } catch (err) {
+        // Logika untuk menangkap pesan constraint dari backend
+        const backendError = err.response?.data?.detail || err.response?.data?.message;
+        let userFriendlyMsg = "Gagal menghapus. Data terhubung dengan modul lain.";
 
-            setMessage({ type: 'success', text: `Berhasil update ${selectedNpps.length} orang.` });
-            setUpdateData({ company: '', division: '', posisi: '' }); 
-            setSelectedNpps([]); // Bersihkan pilihan setelah sukses
-            fetchPeople();
-        } catch (err) { 
-            console.error("Error Detail:", err.response?.data);
-            setMessage({ 
-                type: 'danger', 
-                text: err.response?.data?.detail || "Gagal update." 
-            }); 
+        if (backendError?.includes("foreign key constraint")) {
+            userFriendlyMsg = "Gagal: Orang ini masih terdaftar sebagai PIC di Manajemen Relasi/Aplikasi.";
         }
+
+        setMessage({ type: 'danger', text: userFriendlyMsg });
+        console.error("Backend Error:", backendError);
+    } finally {
         setLoading(false);
-    };
+    }
+};
+
+// 2. Update onBulkUpdate untuk menampilkan jumlah
+const onBulkUpdate = async () => {
+    if (selectedNpps.length === 0) return alert("Pilih orang terlebih dahulu!");
+    
+    const fieldsToUpdate = Object.fromEntries(
+        Object.entries(updateData).filter(([_, v]) => v !== '')
+    );
+
+    if (Object.keys(fieldsToUpdate).length === 0) return alert("Isi minimal satu field!");
+
+    setLoading(true);
+    try {
+        const res = await bulkUpdatePeopleCompany({ 
+            npps: selectedNpps, 
+            fields: fieldsToUpdate 
+        });
+
+        // Backend sebaiknya mengembalikan jumlah yang terupdate
+        const updatedCount = res.data?.updated_count || selectedNpps.length;
+
+        setMessage({ 
+            type: 'success', 
+            text: `✅ Berhasil memperbarui ${updatedCount} orang.` 
+        });
+
+        setUpdateData({ company: '', division: '', posisi: '' }); 
+        setSelectedNpps([]); 
+        setSelectedPeopleData([]);
+        fetchPeople();
+    } catch (err) { 
+        console.error("Error Detail:", err.response?.data);
+        setMessage({ 
+            type: 'danger', 
+            text: err.response?.data?.detail || "Gagal update." 
+        }); 
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
@@ -155,13 +196,11 @@ function BulkActionPage() {
         const reader = new FileReader();
         reader.onload = async (e) => {
             const text = e.target.result;
-            // Split berdasarkan baris dan bersihkan baris kosong
             let rows = text.split('\n').map(r => r.trim()).filter(r => r !== "");
             
             if (rows.length === 0) return setLoading(false);
 
             const firstRow = rows[0].toLowerCase();
-            // Jika baris pertama mengandung kata kunci header, buang baris tersebut
             if (firstRow.includes('nama') || firstRow.includes('email') || firstRow.includes('npp')) {
                 rows = rows.slice(1);
             }
@@ -176,16 +215,33 @@ function BulkActionPage() {
             }).filter(item => item.email && item.email.includes('@'));
 
             try {
-                await bulkInsertPeople(data);
-                setMessage({ type: 'success', text: "Bulk insert berhasil!" });
+                // 1. Simpan hasil respons ke dalam variabel 'res'
+                const res = await bulkInsertPeople(data);
+                
+                // 2. Ambil jumlah data dari backend. 
+                // Jika backend mengirimkan { inserted_count: 10 }, gunakan itu.
+                // Jika tidak ada, kita gunakan panjang data yang dikirim sebagai fallback.
+                const count = res.data?.inserted_count || data.length;
+
+                setMessage({ 
+                    type: 'success', 
+                    text: `✅ Bulk insert berhasil! ${count} data baru telah ditambahkan.` 
+                });
+                
                 fetchPeople();
+                setCsvFile(null); // Reset input file setelah berhasil
             } catch (err) { 
-                setMessage({ type: 'danger', text: "Gagal bulk insert." }); 
+                console.error("Error Detail:", err.response?.data);
+                const errorMsg = err.response?.data?.message || "Gagal melakukan bulk insert.";
+                setMessage({ type: 'danger', text: `❌ ${errorMsg}` }); 
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         reader.readAsText(csvFile);
     };
+
+    
 
     return (
         <Container className="mt-4">
@@ -213,11 +269,12 @@ function BulkActionPage() {
                         <hr />
 
                         {/* BARIS 2: BULK UPDATE FIELDS */}
+                        {/* BARIS 2: BULK UPDATE & DELETE FIELDS */}
                         <Row className="g-2">
-                            <Col md={3}>
+                            <Col md={2}>
                                 <Form.Control 
                                     name="company" 
-                                    placeholder="Update Company..." 
+                                    placeholder="Company..." 
                                     value={updateData.company} 
                                     onChange={handleInputChange} 
                                 />
@@ -225,7 +282,7 @@ function BulkActionPage() {
                             <Col md={3}>
                                 <Form.Control 
                                     name="division" 
-                                    placeholder="Update Division..." 
+                                    placeholder="Division..." 
                                     value={updateData.division} 
                                     onChange={handleInputChange} 
                                 />
@@ -233,7 +290,7 @@ function BulkActionPage() {
                             <Col md={3}>
                                 <Form.Control 
                                     name="posisi" 
-                                    placeholder="Update Posisi..." 
+                                    placeholder="Posisi..." 
                                     value={updateData.posisi} 
                                     onChange={handleInputChange} 
                                 />
@@ -241,11 +298,19 @@ function BulkActionPage() {
                             <Col md={3}>
                                 <Button 
                                     variant="primary" 
-                                    className="w-100 fw-bold" 
+                                    className="w-100 fw-bold mb-2" 
                                     onClick={onBulkUpdate} 
                                     disabled={loading || selectedNpps.length === 0}
                                 >
                                     Update {selectedNpps.length} Terpilih
+                                </Button>
+                                <Button 
+                                    variant="outline-danger" 
+                                    className="w-100" 
+                                    onClick={onBulkDelete} 
+                                    disabled={loading || selectedNpps.length === 0}
+                                >
+                                    Hapus Terpilih
                                 </Button>
                             </Col>
                         </Row>

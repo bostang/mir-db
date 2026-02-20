@@ -9,7 +9,8 @@ import AppPeoplePage from './pages/AppPeoplePage';
 import DownloadPage from './pages/DownloadPage';
 import LinksPage from './pages/LinksPage'; 
 import ValidatePICPage from './pages/validatePICPage'; 
-import BulkActionPage from './pages/BulkActionPage';
+import BulkActionPeople from './pages/BulkActionPeople';
+import BulkActionRelations from './pages/BulkActionRelations';
 
 function App() {
   return (
@@ -26,7 +27,8 @@ function App() {
           <Route path="/map-pic" element={<AppPeoplePage />} />
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/validate-pic" element={<ValidatePICPage />} />
-          <Route path="/bulk-action-people" element={<BulkActionPage />} />
+          <Route path="/bulk-action-people" element={<BulkActionPeople />} />
+          <Route path="/bulk-action-relations" element={<BulkActionRelations />} />
         </Routes>
       </div>
     </>

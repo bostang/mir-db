@@ -106,8 +106,9 @@ const RelationForm = memo(({ apps, onSave, fetchPICs, people }) => {
                                 <option value="L3">L3</option>
                                 <option value="Business">Business</option>
                                 <option value="Surroundings">Surroundings</option>
-                                <option value="Others">Others</option>
                                 <option value="Management">Management</option>
+                                <option value="Principal">Principal</option>
+                                <option value="Others">Others</option>
                             </Form.Select>
                         </Col>
                     </Row>
