@@ -79,9 +79,15 @@ function AppsPage() {
     const fetchApps = async () => {
         try {
             const res = await getApps();
-            setApps(res.data);
+            // Extract the array from the response. 
+            // If your API structure is consistent, it's likely res.data.data
+            const appData = res.data?.data || res.data || [];
+            
+            // Ensure we are actually setting an array
+            setApps(Array.isArray(appData) ? appData : []);
         } catch (error) {
             console.error('Failed to fetch apps:', error);
+            setApps([]); // Reset to empty array on failure to prevent crash
         }
     };
 
@@ -124,11 +130,14 @@ function AppsPage() {
 
     // Logic Pencarian Tetap Real-time (useMemo untuk efisiensi tabel)
     const filteredApps = useMemo(() => {
+        // Safety check: if apps is not an array, return empty list
+        if (!Array.isArray(apps)) return [];
+
         return apps.filter(app =>
-            app.nama_aplikasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            app.application_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (app.deskripsi_aplikasi && app.deskripsi_aplikasi.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (app.business_owner && app.business_owner.toLowerCase().includes(searchTerm.toLowerCase()))
+            (app.nama_aplikasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (app.application_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (app.deskripsi_aplikasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (app.business_owner || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [apps, searchTerm]);
 

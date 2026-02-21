@@ -23,4 +23,4 @@ const getNextNppNumber = () => {
     });
 };
 
-module.exports = { generateNextNpp };
+module.exports = { getNextNppNumber };

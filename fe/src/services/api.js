@@ -90,3 +90,6 @@ export const getRelations = () => api.get('/app-people-map');
 export const bulkInsertRelations = (relations) => api.post('/app-people-map/bulk-insert', { relations });
 export const bulkDeleteRelations = (relations) => api.delete('/app-people-map/bulk-delete', { data: { relations } });
 export const bulkUpdateRelations = (data) => api.put('/app-people-map/bulk-update', data);
+
+// Statistik Dashboard
+export const getDashboardStats = () => api.get('/dashboard/stats');

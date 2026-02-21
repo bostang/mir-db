@@ -14,7 +14,16 @@ function AppSearch() {
   const [selectedDivision, setSelectedDivision] = useState('All');
 
   useEffect(() => {
-    getApps().then(res => setAllApps(res.data)).catch(err => console.error(err));
+    getApps()
+      .then(res => {
+        // Pastikan data yang masuk adalah array
+        const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setAllApps(data);
+      })
+      .catch(err => {
+        console.error(err);
+        setAllApps([]); // Fallback ke array kosong jika error
+      });
   }, []);
 
   useEffect(() => {
@@ -31,12 +40,18 @@ function AppSearch() {
 
   // Ekstrak daftar divisi unik dari data people yang sedang ditampilkan
   const divisions = useMemo(() => {
+    // Jika people bukan array, langsung kembalikan ['All']
+    if (!Array.isArray(people)) return ['All']; 
+    
     const distinct = [...new Set(people.map(p => p.division))].filter(Boolean);
     return ['All', ...distinct.sort()];
   }, [people]);
 
-  // Filter data people berdasarkan divisi yang dipilih
+  // Filter data people berdasarkan divisi
   const filteredPeople = useMemo(() => {
+    // Jika people bukan array, langsung kembalikan array kosong
+    if (!Array.isArray(people)) return []; 
+    
     if (selectedDivision === 'All') return people;
     return people.filter(p => p.division === selectedDivision);
   }, [people, selectedDivision]);
@@ -46,18 +61,25 @@ function AppSearch() {
     setSearchTerm(`${app.nama_aplikasi} (${app.application_id})`);
     setSuggestions([]);
     setMessage('');
-    setSelectedDivision('All'); // Reset filter divisi setiap ganti aplikasi
+    setSelectedDivision('All');
     
     try {
       const res = await getPeopleByAppId(app.application_id);
-      if (res.data.length === 0) {
+      
+      // LOGIKA PENYELAMAT:
+      // Pastikan res.data adalah array. Jika API membungkusnya dalam res.data.data, sesuaikan.
+      const dataResult = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      
+      if (dataResult.length === 0) {
         setMessage('Tidak ada PIC yang terkait dengan aplikasi ini.');
-        setPeople([]);
+        setPeople([]); // Paksa jadi array kosong
       } else {
-        setPeople(res.data);
+        setPeople(dataResult); // Set data yang sudah dipastikan array
       }
     } catch (error) {
+      console.error("Gagal fetch PIC:", error);
       setMessage('Gagal mencari PIC.');
+      setPeople([]); // Paksa jadi array kosong agar tidak crash
     }
   };
 
@@ -139,30 +161,30 @@ function AppSearch() {
             <h5 className="mb-0">Daftar PIC:</h5>
             <small className="text-muted">Menampilkan {filteredPeople.length} orang</small>
           </div>
-          <Table striped bordered hover responsive className="shadow-sm">
-            <thead className="table-dark text-nowrap">
-              <tr>
-                <th>NPP</th>
-                <th>Nama</th>
-                <th>Posisi</th>
-                <th>Divisi</th>
-                <th>Email</th>
-                <th>No. Telp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPeople.map((p, index) => (
-                <tr key={index}>
-                  <td>{p.npp}</td>
-                  <td className="fw-bold text-primary">{p.nama}</td>
-                  <td>{p.posisi}</td>
-                  <td>{p.division}</td>
-                  <td>{p.email}</td>
-                  <td>{p.phone}</td>
+            <Table striped bordered hover responsive className="shadow-sm">
+              <thead className="table-dark text-nowrap">
+                <tr>
+                  <th>NPP</th>
+                  <th>Nama</th>
+                  <th>Posisi</th>
+                  <th>Divisi</th>
+                  <th>Email</th>
+                  <th>No. Telp</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {filteredPeople.map((p, index) => (
+                  <tr key={index}>
+                    <td>{p.npp}</td>
+                    <td className="fw-bold text-primary">{p.nama}</td>
+                    <td>{p.posisi}</td>
+                    <td>{p.division}</td>
+                    <td>{p.email}</td>
+                    <td>{p.phone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
         </div>
       )}
     </Container>

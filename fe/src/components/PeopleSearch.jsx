@@ -9,15 +9,18 @@ function PeopleSearch() {
   const [apps, setApps] = useState([]);
   const [message, setMessage] = useState('');
 
-  // Live Suggestion Logic
+  // Live Suggestion Logic dengan Guarding
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchTerm.length >= 2 && !selectedPerson) {
         try {
-          const res = await getPeople(1, 10, searchTerm); // Ambil 10 saran teratas
-          setSuggestions(res.data);
+          const res = await getPeople(1, 10, searchTerm);
+          // Pastikan data adalah array
+          const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+          setSuggestions(data);
         } catch (err) {
           console.error('Error fetching suggestions', err);
+          setSuggestions([]);
         }
       } else {
         setSuggestions([]);
@@ -34,14 +37,20 @@ function PeopleSearch() {
     
     try {
       const res = await getAppsByPeopleNpp(person.npp);
-      if (res.data.length === 0) {
+      // Guarding: pastikan data result adalah array
+      const dataResult = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      
+      if (dataResult.length === 0) {
         setMessage(`Karyawan ${person.nama} tidak mengelola aplikasi apapun.`);
         setApps([]);
       } else {
-        setApps(res.data);
+        setApps(dataResult);
+        setMessage('');
       }
     } catch (error) {
+      console.error("Gagal load apps:", error);
       setMessage('Gagal memuat data aplikasi.');
+      setApps([]);
     }
   };
 
@@ -53,38 +62,43 @@ function PeopleSearch() {
   };
 
   return (
-    <Container className="mt-4">
-      <h1 className="mb-4">Cari Aplikasi Berdasarkan PIC</h1>
+    <Container className="py-4">
+      <h2 className="mb-4 fw-bold text-center">🔎 Cari Aplikasi Berdasarkan PIC</h2>
       
-      <Card className="mb-4 shadow-sm">
-        <Card.Body>
+      <Card className="mb-4 shadow-sm border-0">
+        <Card.Body className="p-4">
           <Form.Group className="position-relative">
-            <Form.Label className="fw-bold">Ketik Nama atau NPP PIC</Form.Label>
+            <Form.Label className="fw-bold text-secondary">Ketik Nama atau NPP PIC</Form.Label>
             <div className="d-flex gap-2">
               <Form.Control 
                 type="text" 
+                className="py-2 px-3 border shadow-sm"
                 value={searchTerm} 
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                   if (selectedPerson) setSelectedPerson(null);
                 }} 
-                placeholder="Contoh: Budi atau 12345..." 
+                placeholder="Contoh: Budi atau 70556..." 
               />
               {(selectedPerson || searchTerm) && (
-                <Button variant="secondary" onClick={handleClear}>Reset</Button>
+                <Button variant="outline-dark" onClick={handleClear}>Reset</Button>
               )}
             </div>
 
             {/* Dropdown Saran */}
             {suggestions.length > 0 && (
-              <ListGroup className="position-absolute w-100 shadow-lg" style={{ zIndex: 1000 }}>
+              <ListGroup className="position-absolute w-100 shadow-lg mt-1" style={{ zIndex: 1000 }}>
                 {suggestions.map((p) => (
                   <ListGroup.Item 
                     action 
                     key={p.npp} 
+                    className="py-2"
                     onClick={() => handleSelectPerson(p)}
                   >
-                    <strong>{p.nama}</strong> <small className="text-muted">({p.npp}) - {p.division}</small>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span><strong>{p.nama}</strong> <small className="text-muted">({p.npp})</small></span>
+                      <small className="badge bg-light text-dark border">{p.division}</small>
+                    </div>
                   </ListGroup.Item>
                 ))}
               </ListGroup>
@@ -93,27 +107,37 @@ function PeopleSearch() {
         </Card.Body>
       </Card>
 
-      {message && <p className="alert alert-info">{message}</p>}
+      {message && <div className="alert alert-info border-0 shadow-sm text-center">{message}</div>}
 
       {apps.length > 0 && (
-        <Table striped bordered hover responsive className="shadow-sm">
-          <thead className="table-dark">
-            <tr>
-              <th>ID Aplikasi</th>
-              <th>Nama Aplikasi</th>
-              <th>Deskripsi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {apps.map((app) => (
-              <tr key={app.application_id}>
-                <td><code>{app.application_id}</code></td>
-                <td className="fw-bold">{app.nama_aplikasi}</td>
-                <td>{app.deskripsi_aplikasi || '-'}</td>
+        <Card className="border shadow-sm overflow-hidden">
+          <Table hover responsive className="mb-0">
+            <thead className="bg-light border-bottom">
+              <tr className="align-middle text-center">
+                <th className="py-3 text-secondary" style={{ width: '20%' }}>ID Aplikasi</th>
+                <th className="py-3 text-secondary" style={{ width: '30%' }}>Nama Aplikasi</th>
+                <th className="py-3 text-secondary">Deskripsi</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {apps.map((app) => (
+                <tr key={app.application_id} className="align-middle border-bottom">
+                  <td className="text-center">
+                    <code className="bg-light px-2 py-1 text-danger border rounded small">
+                      {app.application_id}
+                    </code>
+                  </td>
+                  <td className="fw-bold text-primary px-3">
+                    {app.nama_aplikasi}
+                  </td>
+                  <td className="text-muted px-3 small">
+                    {app.deskripsi_aplikasi || '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
       )}
     </Container>
   );

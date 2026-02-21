@@ -1,26 +1,58 @@
-import { Link } from 'react-router-dom';
-import { Navbar, Nav } from 'react-bootstrap'; // Remove Container from this import
+import { Link, useLocation } from 'react-router-dom';
+import { Navbar, Nav, NavDropdown, Container } from 'react-bootstrap';
 
 function AppNavbar() {
+  const location = useLocation();
+
+  // Helper untuk menandai menu aktif (opsional)
+  const isActive = (path) => location.pathname === path;
+
   return (
-    // Remove the <Container> component wrapping the Navbar content
-    <Navbar bg="dark" variant="dark" expand="lg">
-      <Navbar.Brand as={Link} to="/">MIM DB</Navbar.Brand>
-      <Navbar.Toggle aria-controls="basic-navbar-nav" />
-      <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto">
-          <Nav.Link as={Link} to="/apps">Daftar Aplikasi</Nav.Link>
-          <Nav.Link as={Link} to="/people">Daftar PIC</Nav.Link>
-          <Nav.Link as={Link} to="/links">Pranala Aplikasi</Nav.Link>
-          <Nav.Link as={Link} to="/map-pic">Edit Relasi</Nav.Link>
-          <Nav.Link as={Link} to="/search/people">Cari PIC</Nav.Link>
-          <Nav.Link as={Link} to="/search/apps">Cari Aplikasi</Nav.Link>
-          <Nav.Link as={Link} to="/download">Unduh Data</Nav.Link>
-          <Nav.Link as={Link} to="/validate-pic">Validasi PIC</Nav.Link>
-          <Nav.Link as={Link} to="/bulk-action-people">Bulk Action People</Nav.Link>
-          <Nav.Link as={Link} to="/bulk-action-relations">Bulk Action Relations</Nav.Link>
-        </Nav>
-      </Navbar.Collapse>
+    <Navbar bg="dark" variant="dark" expand="lg" className="shadow-sm py-2">
+      <Container fluid>
+        <Navbar.Brand as={Link} to="/" className="fw-bold fs-4 ms-2">
+          <span className="text-primary">MIM</span> DB
+        </Navbar.Brand>
+        
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto me-3">
+            
+            {/* Kelompok Manajemen (CRUD) */}
+            <NavDropdown title="📂 Manajemen" id="nav-management">
+              <NavDropdown.Item as={Link} to="/apps">Daftar Aplikasi (Apps)</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/people">Daftar Personel (People)</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/links">Pranala (Links)</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/map-pic">Relasi PIC</NavDropdown.Item>
+            </NavDropdown>
+
+            {/* Kelompok Pencarian */}
+            <NavDropdown title="🔍 Pencarian" id="nav-search">
+              <NavDropdown.Item as={Link} to="/search/people">Cari PIC</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/search/apps">Cari Aplikasi Kelolaan</NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item as={Link} to="/validate-pic">Validasi PIC</NavDropdown.Item>
+            </NavDropdown>
+
+            {/* Kelompok Bulk Action */}
+            <NavDropdown title="⚡ Bulk Action" id="nav-bulk">
+              <NavDropdown.Item as={Link} to="/bulk-action-people">Kelola People (CSV)</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/bulk-action-relations">Kelola Relasi (CSV)</NavDropdown.Item>
+            </NavDropdown>
+
+            {/* Single Link - Unduh Data */}
+            <Nav.Link 
+                as={Link} 
+                to="/download" 
+                className={isActive('/download') ? 'active fw-bold' : ''}
+            >
+              📊 Unduh Data
+            </Nav.Link>
+
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
     </Navbar>
   );
 }

@@ -1,3 +1,5 @@
+//be/src/server.js
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -17,10 +19,12 @@ app.use(express.json());
 app.get('/', (req, res) => res.send('API berjalan dengan sukses!'));
 
 // 3. Import & Gunakan Routes
+// Jika server.js ada di be/src/, maka routenya ada di folder yang sama (./routes)
 app.use('/api/apps', require('./src/routes/apps'));
 app.use('/api/links', require('./src/routes/links'));
 app.use('/api/people', require('./src/routes/people'));
 app.use('/api/app-people-map', require('./src/routes/relations'));
+app.use('/api/dashboard/stats', require('./src/routes/stats'));
 
 // 4. Error Handler (Harus paling bawah setelah semua rute)
 app.use((err, req, res, next) => {

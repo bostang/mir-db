@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Container, Table, Form, Card, Alert, Badge, Row, Col, ButtonGroup, Button, ListGroup, Spinner } from 'react-bootstrap';
 import { getApps, getPeopleByAppId, bulkCheckPeople, instantRegisterPIC} from '../services/api';
-import axios from 'axios';
 
 function ValidatePICPage() {
     // State Aplikasi & Pencarian
@@ -11,8 +10,8 @@ function ValidatePICPage() {
     const [selectedApp, setSelectedApp] = useState(null);
 
     // State Data
-    const [masterPeople, setMasterPeople] = useState([]); // Hanya berisi orang yang relevan hasil bulk-check
-    const [appPICs, setAppPICs] = useState([]); // Email PIC yang sudah terdaftar di aplikasi terpilih
+    const [masterPeople, setMasterPeople] = useState([]); // Pastikan selalu array
+    const [appPICs, setAppPICs] = useState([]); 
     const [csvData, setCsvData] = useState([]);
     
     // State UI
@@ -22,19 +21,22 @@ function ValidatePICPage() {
     const [selectedDivision, setSelectedDivision] = useState('All');
     const [uploadMode, setUploadMode] = useState('teams');
 
-    // 1. Load daftar aplikasi untuk autocomplete
+    // 1. Load daftar aplikasi
     useEffect(() => {
         getApps()
-            .then(res => setAllApps(res.data))
+            .then(res => {
+                const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                setAllApps(data);
+            })
             .catch(err => console.error("Gagal load aplikasi:", err));
     }, []);
 
-    // 2. Logika Autocomplete Saran Aplikasi
+    // 2. Logika Autocomplete
     useEffect(() => {
-        if (searchTerm.length >= 1 && !selectedApp) {
+        if (searchTerm.length >= 1 && !selectedApp && Array.isArray(allApps)) {
             const filtered = allApps.filter(app => 
-                app.nama_aplikasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                app.application_id.toLowerCase().includes(searchTerm.toLowerCase())
+                (app.nama_aplikasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (app.application_id || '').toLowerCase().includes(searchTerm.toLowerCase())
             ).slice(0, 8);
             setSuggestions(filtered);
         } else {
@@ -42,18 +44,19 @@ function ValidatePICPage() {
         }
     }, [searchTerm, allApps, selectedApp]);
 
-    // 3. Ambil data PIC yang sudah terhubung ke aplikasi saat aplikasi dipilih
+    // 3. Ambil data PIC aplikasi aktif
     useEffect(() => {
         const fetchAppPICs = async () => {
             if (!selectedApp) { setAppPICs([]); return; }
             setLoading(true);
             try {
                 const res = await getPeopleByAppId(selectedApp.application_id);
-                // Kita ambil emailnya saja untuk mempermudah perbandingan isRegisteredInApp
-                const emails = res.data.map(p => (p.email || '').toLowerCase().trim());
+                const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                const emails = data.map(p => (p.email || '').toLowerCase().trim());
                 setAppPICs(emails);
             } catch (err) {
                 console.error("Gagal fetch PIC aplikasi:", err);
+                setAppPICs([]);
             } finally {
                 setLoading(false);
             }
@@ -115,11 +118,13 @@ function ValidatePICPage() {
 
                 if (parsedData.length === 0) throw new Error("File kosong atau format tidak sesuai.");
 
-                // --- OPTIMISASI BACKEND CHECK ---
                 const uniqueEmails = [...new Set(parsedData.map(d => d.email))];
                 const res = await bulkCheckPeople(uniqueEmails);
                 
-                setMasterPeople(res.data); // Menyimpan data divisi/nama asli dari DB People
+                // GUARDING: Pastikan data dari API dimasukkan sebagai Array
+                const cleanMasterData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                
+                setMasterPeople(cleanMasterData);
                 setCsvData(parsedData);
             } catch (err) {
                 setError(err.message || "Gagal memproses file.");
@@ -131,16 +136,17 @@ function ValidatePICPage() {
         reader.readAsText(file, uploadMode === 'teams' ? 'utf-16le' : 'utf-8');
     };
 
-    // 5. Gabungkan Data CSV, Master People, dan Map Aplikasi
+    // 5. Logika Penggabungan Data (Tabel)
     const finalTableData = useMemo(() => {
+        if (!Array.isArray(csvData)) return [];
+        const safeMaster = Array.isArray(masterPeople) ? masterPeople : [];
+
         const mapped = csvData.map(item => {
-            const emailClean = (item.email || '').trim();
-            
-            // Cari detail di master people (hasil bulk check)
-            const personInMaster = masterPeople.find(p => (p.email || '').toLowerCase().trim() === emailClean);
-            
-            // Cek apakah sudah terdaftar di aplikasi ini (people_apps_map)
-            const isRegisteredInApp = appPICs.includes(emailClean);
+            const emailClean = (item.email || '').trim().toLowerCase();
+            const personInMaster = safeMaster.find(p => 
+                (p.email || '').toLowerCase().trim() === emailClean
+            );
+            const isRegisteredInApp = Array.isArray(appPICs) ? appPICs.includes(emailClean) : false;
             
             return {
                 ...item,
@@ -158,10 +164,16 @@ function ValidatePICPage() {
         return filtered;
     }, [csvData, masterPeople, appPICs, filterStatus, selectedDivision]);
 
-    // Opsi filter divisi berdasarkan data yang tampil
+    // 6. Opsi Filter Divisi (Hanya Satu Deklarasi)
     const divisionOptions = useMemo(() => {
+        if (!Array.isArray(csvData)) return ['All'];
+        const safeMaster = Array.isArray(masterPeople) ? masterPeople : [];
+
         const divs = csvData.map(item => {
-            const found = masterPeople.find(p => (p.email || '').toLowerCase().trim() === item.email);
+            const emailClean = (item.email || '').trim().toLowerCase();
+            const found = safeMaster.find(p => 
+                (p.email || '').toLowerCase().trim() === emailClean
+            );
             return found ? found.division : 'NOT_IN_MASTER';
         });
         return ['All', ...new Set(divs)].sort();
@@ -169,11 +181,9 @@ function ValidatePICPage() {
 
     const handleInstantAdd = async (person) => {
         if (!selectedApp) return;
-        
         setLoading(true);
-        setError(null); // Reset error sebelum mulai
+        setError(null);
         try {
-            // Gunakan service yang sudah kita buat
             await instantRegisterPIC({
                 application_id: selectedApp.application_id,
                 nama: person.nama,
@@ -182,16 +192,13 @@ function ValidatePICPage() {
 
             alert(`Berhasil menambahkan ${person.nama} sebagai PIC!`);
             
-            // Refresh data PIC aplikasi agar status di tabel berubah
             const res = await getPeopleByAppId(selectedApp.application_id);
-            const emails = res.data.map(p => (p.email || '').toLowerCase().trim());
+            const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+            const emails = data.map(p => (p.email || '').toLowerCase().trim());
             setAppPICs(emails);
-            
         } catch (err) {
-            // Tangani pesan error dari backend
             const errorMsg = err.response?.data || "Gagal mendaftarkan PIC";
             setError(typeof errorMsg === 'string' ? errorMsg : "Terjadi kesalahan sistem");
-            console.error("Detail Error:", err);
         } finally {
             setLoading(false);
         }
@@ -265,7 +272,7 @@ function ValidatePICPage() {
             {loading && (
                 <div className="text-center my-4">
                     <Spinner animation="border" variant="primary" />
-                    <p className="mt-2 text-muted">Memproses data dan validasi database...</p>
+                    <p className="mt-2 text-muted">Memproses data...</p>
                 </div>
             )}
 
@@ -321,13 +328,13 @@ function ValidatePICPage() {
                                         </td>
                                         <td className="text-center">
                                             {item.isExistInMaster ? 
-                                                <Badge bg="success">Terdaftar di DB People</Badge> : 
+                                                <Badge bg="success">Terdaftar</Badge> : 
                                                 <Badge bg="danger">User Baru</Badge>}
                                         </td>
                                         <td className="text-center">
                                             {item.isRegisteredInApp ? 
-                                                <Badge bg="primary">Sudah Jadi PIC</Badge> : 
-                                                <Badge bg="outline-secondary">Belum Terdaftar</Badge>}
+                                                <Badge bg="primary">PIC Aktif</Badge> : 
+                                                <Badge bg="outline-secondary" className='text-muted'>Bukan PIC</Badge>}
                                         </td>
                                         <td className="text-center">
                                             {!item.isRegisteredInApp && (
@@ -351,7 +358,7 @@ function ValidatePICPage() {
             
             {selectedApp && csvData.length === 0 && !loading && (
                 <Alert variant="info" className="text-center">
-                    Silakan upload file absensi untuk melakukan validasi PIC pada aplikasi <strong>{selectedApp.nama_aplikasi}</strong>.
+                    Silakan upload file absensi untuk aplikasi <strong>{selectedApp.nama_aplikasi}</strong>.
                 </Alert>
             )}
         </Container>

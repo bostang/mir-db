@@ -85,7 +85,7 @@ const RelationForm = memo(({ apps, onSave, fetchPICs, people }) => {
                                 required
                             >
                                 <option value="">-- Hasil Pencarian PIC --</option>
-                                {people.map((pic) => (
+                                {Array.isArray(people) && people.map((pic) => (
                                     <option key={pic.npp} value={pic.npp}>
                                         {pic.nama} ({pic.npp})
                                     </option>
@@ -165,9 +165,14 @@ function AppPeoplePage() {
     const fetchPICs = useCallback(async (search = '') => {
         try {
             const res = await getPeople(1, 100, search); 
-            setPeople(res.data);
+            // Ensure you are targeting the actual array. 
+            // If it's like relations, use: res.data.data
+            // If it's a direct array, use: res.data
+            const picArray = res.data?.data || res.data || [];
+            setPeople(Array.isArray(picArray) ? picArray : []);
         } catch (error) {
             console.error('Failed to fetch PICs:', error);
+            setPeople([]); // Fallback to empty array on error
         }
     }, []);
 
@@ -177,10 +182,15 @@ function AppPeoplePage() {
                 getApps(), 
                 getAppPeopleRelations()
             ]);
-            setApps(appsRes.data);
-            setRelations(relationsRes.data);
+            
+            // Perhatikan pengambilannya: res.data adalah bungkus dari API
+            // res.data.data adalah array asli dari database
+            setApps(appsRes.data.data || []); 
+            setRelations(relationsRes.data.data || []); // INI KUNCINYA
+            
             fetchPICs(); 
         } catch (error) {
+            console.error(error);
             setMessage('Gagal memuat data.');
         }
     };
@@ -194,6 +204,9 @@ function AppPeoplePage() {
     // 1. Filter awal berdasarkan Search Term
     const filteredBySearch = useMemo(() => {
         const s = searchTerm.toLowerCase();
+
+        if (!Array.isArray(relations)) return [];
+
         return relations.filter(rel => 
             (rel.application_id || '').toLowerCase().includes(s) ||
             (rel.nama_aplikasi || '').toLowerCase().includes(s) ||
