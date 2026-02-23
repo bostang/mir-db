@@ -2,13 +2,12 @@ import { useState, useEffect, useMemo, memo } from 'react';
 import { getApps, createApp, deleteApp, updateApp } from '../services/api';
 import { Container, Table, Form, Button, Row, Col, Card } from 'react-bootstrap';
 
-// --- KOMPONEN FORM (Terisolasi agar tidak re-render tabel saat mengetik) ---
+// --- KOMPONEN FORM ---
 const AppForm = ({ initialData, editingId, onSave, onCancel }) => {
     const [localData, setLocalData] = useState({ 
         application_id: '', nama_aplikasi: '', deskripsi_aplikasi: '', business_owner: '' 
     });
 
-    // Update form saat tombol 'Edit' di tabel ditekan
     useEffect(() => {
         if (initialData) {
             setLocalData(initialData);
@@ -22,47 +21,52 @@ const AppForm = ({ initialData, editingId, onSave, onCancel }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave(localData);
-        // Reset form jika bukan mode edit
         if (!editingId) {
             setLocalData({ application_id: '', nama_aplikasi: '', deskripsi_aplikasi: '', business_owner: '' });
         }
     };
 
     return (
-        <Card className="mb-4">
-            <Card.Header>{editingId ? 'Edit Aplikasi' : 'Tambah Aplikasi Baru'}</Card.Header>
+        <Card className="mb-4 shadow-sm">
+            <Card.Header className="bg-primary text-white">
+                {editingId ? 'Edit Aplikasi' : 'Tambah Aplikasi Baru'}
+            </Card.Header>
             <Card.Body>
                 <Form onSubmit={handleSubmit}>
                     <Row>
-                        <Col>
+                        <Col md={2}>
                             <Form.Group className="mb-3">
-                                <Form.Control type="text" name="application_id" placeholder="Application ID" value={localData.application_id} onChange={handleChange} required disabled={!!editingId} />
+                                <Form.Label>App ID</Form.Label>
+                                <Form.Control type="text" name="application_id" value={localData.application_id} onChange={handleChange} required disabled={!!editingId} />
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Control type="text" name="nama_aplikasi" placeholder="Nama Aplikasi" value={localData.nama_aplikasi} onChange={handleChange} required />
+                                <Form.Label>Nama Aplikasi</Form.Label>
+                                <Form.Control type="text" name="nama_aplikasi" value={localData.nama_aplikasi} onChange={handleChange} required />
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={4}>
                             <Form.Group className="mb-3">
-                                <Form.Control type="text" name="deskripsi_aplikasi" placeholder="Deskripsi Singkat" value={localData.deskripsi_aplikasi} onChange={handleChange} />
+                                <Form.Label>Deskripsi</Form.Label>
+                                <Form.Control type="text" name="deskripsi_aplikasi" value={localData.deskripsi_aplikasi} onChange={handleChange} />
                             </Form.Group>
                         </Col>
-                        <Col>
+                        <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Control type="text" name="business_owner" placeholder="Business Owner" value={localData.business_owner} onChange={handleChange} />
+                                <Form.Label>Business Owner</Form.Label>
+                                <Form.Control type="text" name="business_owner" value={localData.business_owner} onChange={handleChange} />
                             </Form.Group>
-                        </Col>
-                        <Col xs="auto">
-                            <Button variant="primary" type="submit">
-                                {editingId ? 'Simpan Perubahan' : 'Tambah'}
-                            </Button>
-                            {editingId && (
-                                <Button variant="secondary" className="ms-2" onClick={onCancel}>Batal</Button>
-                            )}
                         </Col>
                     </Row>
+                    <div className="d-flex justify-content-end">
+                        <Button variant="primary" type="submit">
+                            {editingId ? 'Simpan Perubahan' : 'Tambah Aplikasi'}
+                        </Button>
+                        {editingId && (
+                            <Button variant="secondary" className="ms-2" onClick={onCancel}>Batal</Button>
+                        )}
+                    </div>
                 </Form>
             </Card.Body>
         </Card>
@@ -74,20 +78,21 @@ function AppsPage() {
     const [apps, setApps] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState(null);
-    const [selectedApp, setSelectedApp] = useState(null); // Data yang dikirim ke form saat edit
+    const [selectedApp, setSelectedApp] = useState(null);
+
+    // --- LOGIKA RBAC ---
+    // Mengambil role dari localStorage
+    const userRole = localStorage.getItem('role');
+    const isAdmin = userRole === 'admin';
 
     const fetchApps = async () => {
         try {
             const res = await getApps();
-            // Extract the array from the response. 
-            // If your API structure is consistent, it's likely res.data.data
             const appData = res.data?.data || res.data || [];
-            
-            // Ensure we are actually setting an array
             setApps(Array.isArray(appData) ? appData : []);
         } catch (error) {
             console.error('Failed to fetch apps:', error);
-            setApps([]); // Reset to empty array on failure to prevent crash
+            setApps([]);
         }
     };
 
@@ -113,7 +118,6 @@ function AppsPage() {
     const handleEdit = (app) => {
         setEditingId(app.application_id);
         setSelectedApp(app);
-        // Scroll ke atas agar user tahu form sedang dalam mode edit
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -128,41 +132,39 @@ function AppsPage() {
         }
     };
 
-    // Logic Pencarian Tetap Real-time (useMemo untuk efisiensi tabel)
     const filteredApps = useMemo(() => {
-        // Safety check: if apps is not an array, return empty list
         if (!Array.isArray(apps)) return [];
-
         return apps.filter(app =>
             (app.nama_aplikasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (app.application_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (app.deskripsi_aplikasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (app.business_owner || '').toLowerCase().includes(searchTerm.toLowerCase())
+            (app.application_id || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [apps, searchTerm]);
 
     return (
         <Container className="mt-4">
-            <h1 className="mb-4">Daftar Aplikasi</h1>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h1>Daftar Aplikasi</h1>
+                <span className="badge bg-info text-dark">Role: {userRole}</span>
+            </div>
             
             <Form className="mb-4">
-                <Form.Group>
-                    <Form.Control
-                        type="text"
-                        placeholder="Cari Aplikasi (Nama, ID, Deskripsi, atau Business Owner)"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </Form.Group>
+                <Form.Control
+                    type="text"
+                    placeholder="Cari Aplikasi..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </Form>
 
-            {/* Form sekarang berdiri sendiri, mengetik di sini tidak mengganggu tabel */}
-            <AppForm 
-                initialData={selectedApp} 
-                editingId={editingId} 
-                onSave={handleFormSubmit}
-                onCancel={() => { setEditingId(null); setSelectedApp(null); }}
-            />
+            {/* MODIFIKASI 1: Form Tambah/Edit hanya muncul jika isAdmin = true */}
+            {isAdmin && (
+                <AppForm 
+                    initialData={selectedApp} 
+                    editingId={editingId} 
+                    onSave={handleFormSubmit}
+                    onCancel={() => { setEditingId(null); setSelectedApp(null); }}
+                />
+            )}
 
             <Table striped bordered hover responsive>
                 <thead>
@@ -171,7 +173,8 @@ function AppsPage() {
                         <th>Nama Aplikasi</th>
                         <th>Deskripsi</th>
                         <th>Business Owner</th>
-                        <th>Aksi</th>
+                        {/* MODIFIKASI 2: Header kolom Aksi hanya muncul untuk Admin */}
+                        {isAdmin && <th className="text-center">Aksi</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -181,15 +184,18 @@ function AppsPage() {
                             <td>{app.nama_aplikasi}</td>
                             <td>{app.deskripsi_aplikasi}</td>
                             <td>{app.business_owner}</td>
-                            <td>
-                                <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(app)}>Edit</Button>
-                                <Button variant="danger" size="sm" onClick={() => handleDelete(app.application_id)}>Hapus</Button>
-                            </td>
+                            {/* MODIFIKASI 3: Tombol Edit/Delete hanya muncul untuk Admin */}
+                            {isAdmin && (
+                                <td className="text-center">
+                                    <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(app)}>Edit</Button>
+                                    <Button variant="danger" size="sm" onClick={() => handleDelete(app.application_id)}>Hapus</Button>
+                                </td>
+                            )}
                         </tr>
                     ))}
                     {filteredApps.length === 0 && (
                         <tr>
-                            <td colSpan="5" className="text-center">Data tidak ditemukan</td>
+                            <td colSpan={isAdmin ? 5 : 4} className="text-center">Data tidak ditemukan</td>
                         </tr>
                     )}
                 </tbody>

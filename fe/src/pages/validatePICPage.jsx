@@ -3,6 +3,9 @@ import { Container, Table, Form, Card, Alert, Badge, Row, Col, ButtonGroup, Butt
 import { getApps, getPeopleByAppId, bulkCheckPeople, instantRegisterPIC} from '../services/api';
 
 function ValidatePICPage() {
+    const userRole = localStorage.getItem('role');
+    const isAdmin = userRole === 'admin';
+    
     // State Aplikasi & Pencarian
     const [searchTerm, setSearchTerm] = useState('');
     const [allApps, setAllApps] = useState([]);
@@ -337,7 +340,7 @@ function ValidatePICPage() {
                                                 <Badge bg="outline-secondary" className='text-muted'>Bukan PIC</Badge>}
                                         </td>
                                         <td className="text-center">
-                                            {!item.isRegisteredInApp && (
+                                            {isAdmin && !item.isRegisteredInApp && (
                                                 <Button 
                                                     variant="success" 
                                                     size="sm"
@@ -346,6 +349,9 @@ function ValidatePICPage() {
                                                 >
                                                     + Jadikan PIC
                                                 </Button>
+                                            )}
+                                            {!isAdmin && !item.isRegisteredInApp && (
+                                                <small className="text-muted">Read Only</small>
                                             )}
                                         </td>
                                     </tr>

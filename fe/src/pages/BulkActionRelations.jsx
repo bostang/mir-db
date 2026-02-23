@@ -5,6 +5,19 @@ import { getRelations, bulkDeleteRelations, bulkInsertRelations, bulkUpdateRelat
 const allowedLayers = ['L1', 'L2', 'L3', 'Business', 'Surroundings', 'Management', 'Principal', 'Others'];
 
 function BulkActionRelations() {
+    const userRole = localStorage.getItem('role');
+
+    if (userRole !== 'admin') {
+        return (
+            <Container className="mt-5">
+                <Alert variant="danger">
+                    <h4>Akses Ditolak</h4>
+                    Hanya administrator yang diizinkan melakukan aksi masal (Bulk Action).
+                </Alert>
+            </Container>
+        );
+    }
+
     const [relations, setRelations] = useState([]); 
     const [selectedKeys, setSelectedKeys] = useState([]);
     const [loading, setLoading] = useState(false);

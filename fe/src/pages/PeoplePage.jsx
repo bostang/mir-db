@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPeople, updatePeople, createPeople, deletePeople } from '../services/api';
-import { Container, Table, Form, Button, Row, Col, Card, Pagination, Spinner, Alert } from 'react-bootstrap';
+import { Container, Table, Form, Button, Row, Col, Card, Pagination, Spinner, Alert, Badge } from 'react-bootstrap';
 
 function PeoplePage() {
     const [peoples, setPeople] = useState([]);
@@ -13,17 +13,16 @@ function PeoplePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // 1. Ambil data dengan Guarding Array
+    // --- LOGIKA RBAC ---
+    const userRole = localStorage.getItem('role');
+    const isAdmin = userRole === 'admin';
+
     const fetchPeople = async () => {
         setLoading(true);
         setError(null);
         try {
             const res = await getPeople(currentPage, 50, searchTerm);
-            
-            // Perbaikan Utama: Pastikan kita mengambil Array
-            // Jika res.data adalah array, pakai itu. Jika res.data.data yang array, pakai itu.
             const cleanData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-            
             setPeople(cleanData);
         } catch (error) {
             console.error('Failed to fetch peoples:', error);
@@ -34,12 +33,10 @@ function PeoplePage() {
         }
     };
 
-    // 2. Trigger fetch saat halaman berubah
     useEffect(() => {
         fetchPeople();
     }, [currentPage]);
 
-    // 3. Handle Search (Cari saat klik tombol atau tekan enter)
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         setCurrentPage(1); 
@@ -59,12 +56,10 @@ function PeoplePage() {
             } else {
                 await createPeople(formData);
             }
-            // Reset form
             setFormData({ npp: '', nama: '', posisi: '', division: '', email: '', phone: ''});
             setEditingNpp(null);
-            fetchPeople(); // Refresh data
+            fetchPeople();
         } catch (error) {
-            console.error('Failed to save PIC:', error);
             alert(error.response?.data?.message || "Gagal menyimpan data.");
         } finally {
             setLoading(false);
@@ -81,7 +76,7 @@ function PeoplePage() {
             email: person.email || '',
             phone: person.phone || '',
         });
-        window.scrollTo(0, 0); // Scroll ke atas agar form terlihat
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (npp) => {
@@ -97,68 +92,73 @@ function PeoplePage() {
 
     return (
         <Container className="mt-4 pb-5">
-            <h1 className="mb-4">Daftar PIC (Master Data)</h1>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h1 className="mb-0">Daftar PIC (Master Data)</h1>
+                <Badge bg="info" className="text-dark p-2">Login as: {userRole}</Badge>
+            </div>
 
             {error && <Alert variant="danger">{error}</Alert>}
 
-            {/* Form Input/Edit */}
-            <Card className="mb-4 shadow-sm border-0">
-                <Card.Header className={editingNpp ? "bg-warning text-dark fw-bold" : "bg-primary text-white fw-bold"}>
-                    {editingNpp ? '📝 Edit PIC Mode' : '➕ Tambah PIC Baru'}
-                </Card.Header>
-                <Card.Body className="bg-light">
-                    <Form onSubmit={handleFormSubmit}>
-                        <Row>
-                            <Col md={3}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">NPP</Form.Label>
-                                    <Form.Control type="text" name="npp" value={formData.npp} onChange={handleChange} required disabled={!!editingNpp} placeholder="Contoh: 88123" />
-                                </Form.Group>
-                            </Col>
-                            <Col md={5}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">Nama Lengkap</Form.Label>
-                                    <Form.Control type="text" name="nama" value={formData.nama} onChange={handleChange} required placeholder="Masukkan nama..." />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">Email</Form.Label>
-                                    <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@perusahaan.com" />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">Posisi / Jabatan</Form.Label>
-                                    <Form.Control type="text" name="posisi" value={formData.posisi} onChange={handleChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">Divisi</Form.Label>
-                                    <Form.Control type="text" name="division" value={formData.division} onChange={handleChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label className="small fw-bold">No. Telp</Form.Label>
-                                    <Form.Control type="text" name="phone" value={formData.phone} onChange={handleChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={12} className="text-end border-top pt-3">
-                                {editingNpp && (
-                                    <Button variant="outline-secondary" className="me-2" onClick={() => {setEditingNpp(null); setFormData({npp:'',nama:'',posisi:'',division:'',email:'',phone:''})}}>
-                                        Batal
+            {/* MODIFIKASI 1: Form Input/Edit hanya muncul jika isAdmin */}
+            {isAdmin && (
+                <Card className="mb-4 shadow-sm border-0">
+                    <Card.Header className={editingNpp ? "bg-warning text-dark fw-bold" : "bg-primary text-white fw-bold"}>
+                        {editingNpp ? '📝 Edit PIC Mode' : '➕ Tambah PIC Baru'}
+                    </Card.Header>
+                    <Card.Body className="bg-light">
+                        <Form onSubmit={handleFormSubmit}>
+                            <Row>
+                                <Col md={3}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">NPP</Form.Label>
+                                        <Form.Control type="text" name="npp" value={formData.npp} onChange={handleChange} required disabled={!!editingNpp} placeholder="Contoh: 88123" />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={5}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">Nama Lengkap</Form.Label>
+                                        <Form.Control type="text" name="nama" value={formData.nama} onChange={handleChange} required placeholder="Masukkan nama..." />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={4}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">Email</Form.Label>
+                                        <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@perusahaan.com" />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={4}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">Posisi / Jabatan</Form.Label>
+                                        <Form.Control type="text" name="posisi" value={formData.posisi} onChange={handleChange} />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={4}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">Divisi</Form.Label>
+                                        <Form.Control type="text" name="division" value={formData.division} onChange={handleChange} />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={4}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label className="small fw-bold">No. Telp</Form.Label>
+                                        <Form.Control type="text" name="phone" value={formData.phone} onChange={handleChange} />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={12} className="text-end border-top pt-3">
+                                    {editingNpp && (
+                                        <Button variant="outline-secondary" className="me-2" onClick={() => {setEditingNpp(null); setFormData({npp:'',nama:'',posisi:'',division:'',email:'',phone:''})}}>
+                                            Batal
+                                        </Button>
+                                    )}
+                                    <Button variant={editingNpp ? "warning" : "primary"} type="submit" disabled={loading}>
+                                        {loading ? <Spinner size="sm" /> : (editingNpp ? 'Simpan Perubahan' : 'Tambah PIC')}
                                     </Button>
-                                )}
-                                <Button variant={editingNpp ? "warning" : "primary"} type="submit" disabled={loading}>
-                                    {loading ? <Spinner size="sm" /> : (editingNpp ? 'Simpan Perubahan' : 'Tambah PIC')}
-                                </Button>
-                            </Col>
-                        </Row>
-                    </Form>
-                </Card.Body>
-            </Card>
+                                </Col>
+                            </Row>
+                        </Form>
+                    </Card.Body>
+                </Card>
+            )}
 
             {/* Form Pencarian */}
             <div className="bg-white p-3 rounded shadow-sm border mb-4">
@@ -192,12 +192,13 @@ function PeoplePage() {
                             <th>Divisi</th>
                             <th>Email</th>
                             <th>No. Telp</th>
-                            <th className="text-center">Aksi</th>
+                            {/* MODIFIKASI 2: Header Aksi hanya untuk Admin */}
+                            {isAdmin && <th className="text-center">Aksi</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="6" className="text-center py-4"><Spinner animation="border" /></td></tr>
+                            <tr><td colSpan={isAdmin ? 6 : 5} className="text-center py-4"><Spinner animation="border" /></td></tr>
                         ) : peoples.length > 0 ? (
                             peoples.map((person, index) => (
                                 <tr key={person.npp || index}>
@@ -206,14 +207,17 @@ function PeoplePage() {
                                     <td>{person.division}</td>
                                     <td>{person.email}</td>
                                     <td>{person.phone}</td>
-                                    <td className="text-center">
-                                        <Button variant="outline-warning" size="sm" className="me-2" onClick={() => handleEdit(person)}>Edit</Button>
-                                        <Button variant="outline-danger" size="sm" onClick={() => handleDelete(person.npp)}>Hapus</Button>
-                                    </td>
+                                    {/* MODIFIKASI 3: Tombol Aksi hanya untuk Admin */}
+                                    {isAdmin && (
+                                        <td className="text-center">
+                                            <Button variant="outline-warning" size="sm" className="me-2" onClick={() => handleEdit(person)}>Edit</Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => handleDelete(person.npp)}>Hapus</Button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         ) : (
-                            <tr><td colSpan="6" className="text-center py-4 text-muted">Data tidak ditemukan atau tabel kosong.</td></tr>
+                            <tr><td colSpan={isAdmin ? 6 : 5} className="text-center py-4 text-muted">Data tidak ditemukan atau tabel kosong.</td></tr>
                         )}
                     </tbody>
                 </Table>

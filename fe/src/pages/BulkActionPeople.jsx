@@ -3,6 +3,19 @@ import { Container, Table, Form, Button, Card, Row, Col, Alert, Tabs, Tab } from
 import { getPeople, bulkUpdatePeopleCompany, bulkInsertPeople, bulkDeletePeople } from '../services/api';
 
 function BulkActionPage() {
+    const userRole = localStorage.getItem('role');
+
+    if (userRole !== 'admin') {
+        return (
+            <Container className="mt-5">
+                <Alert variant="danger">
+                    <h4>Akses Ditolak</h4>
+                    Hanya administrator yang diizinkan melakukan aksi masal (Bulk Action).
+                </Alert>
+            </Container>
+        );
+    }
+    
     // State untuk Bulk Update
     const [people, setPeople] = useState([]);
     const [selectedNpps, setSelectedNpps] = useState([]);

@@ -14,7 +14,6 @@ const LinkForm = memo(({ apps, editingId, initialData, onSave, onCancel }) => {
     const [appSearch, setAppSearch] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    // Sync state saat mode edit atau data awal berubah
     useEffect(() => {
         if (initialData) {
             setFormData({
@@ -151,10 +150,13 @@ function LinksPage() {
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState(null);
 
+    // --- LOGIKA RBAC ---
+    const userRole = localStorage.getItem('role');
+    const isAdmin = userRole === 'admin';
+
     const fetchLinksAndApps = async () => {
         try {
             const [linksRes, appsRes] = await Promise.all([getLinks(), getApps()]);
-            // Menangani berbagai kemungkinan struktur response axios
             setLinks(linksRes.data?.data || linksRes.data || []);
             setApps(appsRes.data?.data || appsRes.data || []);
         } catch (error) {
@@ -166,7 +168,6 @@ function LinksPage() {
 
     const handleSave = async (formData) => {
         try {
-            // Bersihkan payload dari null/undefined
             const cleanData = {
                 ...formData,
                 docs_link: formData.docs_link || '',
@@ -185,7 +186,6 @@ function LinksPage() {
             setEditData(null);
             fetchLinksAndApps();
         } catch (error) {
-            // Jika backend kirim 404 karena row tidak berubah, tetap anggap sukses di UI
             if (error.response?.status === 404 && editingId) {
                 setEditingId(null);
                 setEditData(null);
@@ -217,15 +217,20 @@ function LinksPage() {
     }, [links, searchTerm]);
 
     return (
-            <Container className="py-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div className="d-flex align-items-center gap-2">
-                        <span style={{ fontSize: '1.5rem' }}>🔗</span>
-                        <h2 className="fw-bold text-dark mb-0">Pranala Aplikasi</h2>
-                    </div>
+        <Container className="py-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex align-items-center gap-2">
+                    <span style={{ fontSize: '1.5rem' }}>🔗</span>
+                    <h2 className="fw-bold text-dark mb-0">Pranala Aplikasi</h2>
+                </div>
+                <div className="d-flex align-items-center gap-3">
+                    <Badge bg="info" className="text-dark">Role: {userRole}</Badge>
                     <Badge bg="dark" className="px-3 py-2">{filteredLinks.length} Terhubung</Badge>
                 </div>
-                
+            </div>
+            
+            {/* MODIFIKASI 1: Form Input hanya untuk Admin */}
+            {isAdmin && (
                 <LinkForm 
                     apps={apps} 
                     editingId={editingId} 
@@ -233,41 +238,45 @@ function LinksPage() {
                     onSave={handleSave}
                     onCancel={() => { setEditingId(null); setEditData(null); }}
                 />
+            )}
 
-                <Form.Control
-                    type="text"
-                    className="mb-4 py-2 px-3 shadow-sm border" // Pastikan ada class 'border'
-                    placeholder="🔍 Cari ID, Nama Aplikasi, atau Catatan..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <Form.Control
+                type="text"
+                className="mb-4 py-2 px-3 shadow-sm border"
+                placeholder="🔍 Cari ID, Nama Aplikasi, atau Catatan..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
 
-                <Card className="border shadow-sm overflow-hidden"> {/* overflow-hidden agar radius card tidak terpotong table */}
-                    <Table bordered hover responsive className="mb-0">
-                        <thead className="bg-light border-bottom"> {/* Tambah garis bawah pada header */}
-                            <tr className="align-middle"> {/* Menambah align-middle agar teks center secara vertikal */}
-                                <th className="px-3 py-3 text-secondary text-center" style={{ width: '30%' }}>Aplikasi</th>
-                                <th className="text-center py-3 text-secondary">Pranala Cepat</th>
-                                <th className="py-3 text-secondary text-center">Catatan</th>
-                                <th className="text-center py-3 text-secondary" style={{ width: '15%' }}>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="border-top-0">
-                            {filteredLinks.length > 0 ? filteredLinks.map((link) => (
-                                <tr key={link.application_id} className="align-middle border-bottom">
-                                    <td className="px-3 py-3">
-                                        <div className="fw-bold text-primary">{link.nama_aplikasi}</div>
-                                        <code className="small bg-light px-1 text-danger">{link.application_id}</code>
-                                    </td>
-                                    <td className="text-center">
-                                        <div className="d-flex justify-content-center gap-1">
-                                            {link.docs_link && <Button href={link.docs_link} target="_blank" size="sm" variant="info" className="text-white btn-xs">Docs</Button>}
-                                            {link.warroom_link && <Button href={link.warroom_link} target="_blank" size="sm" variant="danger" className="btn-xs">WR</Button>}
-                                            {link.mini_warroom_link && <Button href={link.mini_warroom_link} target="_blank" size="sm" variant="success" className="btn-xs">Mini</Button>}
-                                            {!link.docs_link && !link.warroom_link && !link.mini_warroom_link && <span className="text-muted small italic">Belum ada link</span>}
-                                        </div>
-                                    </td>
-                                    <td className="small text-muted">{link.notes || '-'}</td>
+            <Card className="border shadow-sm overflow-hidden">
+                <Table bordered hover responsive className="mb-0">
+                    <thead className="bg-light border-bottom">
+                        <tr className="align-middle">
+                            <th className="px-3 py-3 text-secondary text-center" style={{ width: '30%' }}>Aplikasi</th>
+                            <th className="text-center py-3 text-secondary">Pranala Cepat</th>
+                            <th className="py-3 text-secondary text-center">Catatan</th>
+                            {/* MODIFIKASI 2: Header Aksi hanya muncul untuk Admin */}
+                            {isAdmin && <th className="text-center py-3 text-secondary" style={{ width: '15%' }}>Aksi</th>}
+                        </tr>
+                    </thead>
+                    <tbody className="border-top-0">
+                        {filteredLinks.length > 0 ? filteredLinks.map((link) => (
+                            <tr key={link.application_id} className="align-middle border-bottom">
+                                <td className="px-3 py-3">
+                                    <div className="fw-bold text-primary">{link.nama_aplikasi}</div>
+                                    <code className="small bg-light px-1 text-danger">{link.application_id}</code>
+                                </td>
+                                <td className="text-center">
+                                    <div className="d-flex justify-content-center gap-1">
+                                        {link.docs_link && <Button href={link.docs_link} target="_blank" size="sm" variant="info" className="text-white btn-xs">Docs</Button>}
+                                        {link.warroom_link && <Button href={link.warroom_link} target="_blank" size="sm" variant="danger" className="btn-xs">WR</Button>}
+                                        {link.mini_warroom_link && <Button href={link.mini_warroom_link} target="_blank" size="sm" variant="success" className="btn-xs">Mini</Button>}
+                                        {!link.docs_link && !link.warroom_link && !link.mini_warroom_link && <span className="text-muted small italic">Belum ada link</span>}
+                                    </div>
+                                </td>
+                                <td className="small text-muted">{link.notes || '-'}</td>
+                                {/* MODIFIKASI 3: Tombol Aksi hanya untuk Admin */}
+                                {isAdmin && (
                                     <td className="text-center">
                                         <div className="d-flex justify-content-center gap-2">
                                             <Button 
@@ -290,20 +299,21 @@ function LinksPage() {
                                             </Button>
                                         </div>
                                     </td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-5 text-muted">
-                                        <div className="mb-2">📭</div>
-                                        Data tidak ditemukan
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                </Card>
-            </Container>
-        );
+                                )}
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan={isAdmin ? 4 : 3} className="text-center py-5 text-muted">
+                                    <div className="mb-2">📭</div>
+                                    Data tidak ditemukan
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Table>
+            </Card>
+        </Container>
+    );
 }
 
 export default LinksPage;

@@ -149,6 +149,9 @@ const getLayerBadgeColor = (layer) => {
 
 // --- HALAMAN UTAMA ---
 function AppPeoplePage() {
+    const userRole = localStorage.getItem('role');
+    const isAdmin = userRole === 'admin';
+    
     const [apps, setApps] = useState([]);
     const [people, setPeople] = useState([]);
     const [relations, setRelations] = useState([]);
@@ -296,7 +299,10 @@ function AppPeoplePage() {
 
     return (
         <Container className="mt-4 pb-5">
-            <h1 className="mb-4 text-center">Kelola Relasi PIC ke Aplikasi</h1>
+            <div className="text-center mb-4">
+                <h1>Kelola Relasi PIC ke Aplikasi</h1>
+                <Badge bg="secondary">Mode: {isAdmin ? 'Administrator (Full Access)' : 'Viewer Only'}</Badge>
+            </div>
             
             {message && (
                 <Alert variant={message.includes('Gagal') ? 'danger' : 'success'} dismissible onClose={() => setMessage('')}>
@@ -304,12 +310,14 @@ function AppPeoplePage() {
                 </Alert>
             )}
             
-            <RelationForm 
-                apps={apps} 
-                people={people}
-                fetchPICs={fetchPICs}
-                onSave={handleSaveRelation} 
-            />
+            {isAdmin && (
+                <RelationForm 
+                    apps={apps} 
+                    people={people}
+                    fetchPICs={fetchPICs}
+                    onSave={handleSaveRelation} 
+                />
+            )}
 
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Daftar Relasi Aktif</h2>
@@ -364,7 +372,7 @@ function AppPeoplePage() {
                         <th>Divisi</th>
                         <th>Layer</th>
                         <th>Catatan</th>
-                        <th className="text-center">Aksi</th>
+                        {isAdmin && <th className="text-center">Aksi</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -388,19 +396,23 @@ function AppPeoplePage() {
                             </td>
 
                             <td className="fst-italic text-muted"><small>{rel.note || '-'}</small></td>
-                            <td className="text-center">
-                                <Button variant="outline-warning" size="sm" className="me-1" onClick={() => handleEditClick(rel)}>
-                                    Edit
-                                </Button>
-                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(rel.application_id, rel.npp)}>
-                                    Hapus
-                                </Button>
-                            </td>
+                            {isAdmin && (
+                                <td className="text-center">
+                                    <Button variant="outline-warning" size="sm" className="me-1" onClick={() => handleEditClick(rel)}>
+                                        Edit
+                                    </Button>
+                                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(rel.application_id, rel.npp)}>
+                                        Hapus
+                                    </Button>
+                                </td>
+                            )}
                         </tr>
                     ))}
                     {finalFilteredRelations.length === 0 && (
                         <tr>
-                            <td colSpan="9" className="text-center py-4 text-muted">Data tidak ditemukan.</td>
+                            <td colSpan={isAdmin ? "9" : "8"} className="text-center py-4 text-muted">
+                                Data tidak ditemukan.
+                            </td>
                         </tr>
                     )}
                 </tbody>
